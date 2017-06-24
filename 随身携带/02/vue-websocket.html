@@ -218,8 +218,10 @@ var app = new Vue({
 		pingduoRate2:1.0014,
 		deltaLimit:30000,
 		delta:0,
-		amount:3,
+		amount:4,
 		leverRate:20,
+
+		origin:0.99802,
 
 
 		curOrder:'',
@@ -231,7 +233,8 @@ var app = new Vue({
 		// sendCount:0,
 		// recCount:0
 
-		amountArr:[3,3,5,7],
+		//amountArr:[3,3,5,7],
+		amountArr:[4,4,4,4],
 		fazhi:[3000,2750,2500],
 		// amountArr:[3,3,3,3],
 		// fazhi:[3000,2750,2500],
@@ -495,217 +498,280 @@ return;
 			console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
 			var array = JSON.parse(e.data);
 			//msg为除了pong以外的数据消息
-			var msg = array[0];
-			if(msg){
-				if(msg['channel']==$this.subKline){
-					if(msg['data'].length>1){
-						//第一次传来许多K线不是我想要的，造成干扰
-						return;
-					}
-					var data = msg['data'][0];
-					var fazhi = $this.fazhi;
-					var amountArr = $this.amountArr;
-					if(data[1]>fazhi[0]){
-						$this.amount = amountArr[0];
-					}else if(data[1]>fazhi[1]){
-						$this.amount = amountArr[1];
-					}else if(data[1]>fazhi[2]){
-						$this.amount = amountArr[2];
-					}else{
-						$this.amount = amountArr[3];
-					}
-
-					if($this.kaipan15min == ''){
-						$this.kaipan15min = data[1];
-						$this.cur15minTime = data[0];
-					}
-
-					if($this.cur15minTime!='' && $this.cur15minTime < data[0]){
-						console.info("..............."+$this.cur15minTime+","+data[0])
-						$this.kaipan15min = data[1];
-						$this.cur15minTime = data[0];
-						
-						var curTime = new Date().getTime();
-						var delta = curTime%$this.cycleNum;
-						$this.delta = delta;
-						//if(delta>$this.deltaLimit){
-						if(curTime>$this.cur15minTime+30000){
-							console.info("k线数据来的太慢了。等下一个cycle")
-						}else{
-							$this.makeorder();							
+			if(array.length==1){
+				var msg = array[0];
+				if(msg){
+					if(msg['channel']==$this.subKline){
+						if(msg['data'].length>1){
+							//第一次传来许多K线不是我想要的，造成干扰
+							return;
 						}
-						//$this.makePlantOrder();
-					}
-					
-					
-					
+						var data = msg['data'][0];
+						var fazhi = $this.fazhi;
+						var amountArr = $this.amountArr;
+						if(data[1]>fazhi[0]){
+							$this.amount = amountArr[0];
+						}else if(data[1]>fazhi[1]){
+							$this.amount = amountArr[1];
+						}else if(data[1]>fazhi[2]){
+							$this.amount = amountArr[2];
+						}else{
+							$this.amount = amountArr[3];
+						}
 
+						if($this.kaipan15min == ''){
+							$this.kaipan15min = data[1];
+							$this.cur15minTime = data[0];
+						}
 
-				}
-				else if(msg['channel']=="ok_futureusd_orderinfo"){
-					console.info("okinfo come in")
-					if(msg['data'].result&&msg['data'].result!='false'){
-						for(var i=0; i<msg['data'].orders.length; i++){
-							var order = msg['data'].orders[i];
-							//$this.finishOrder(order);
-							//订单状态(0等待成交 1部分成交 2全部成交 -1撤单 4撤单处理中)
+						if($this.cur15minTime!='' && $this.cur15minTime < data[0]){
+							console.info("..............."+$this.cur15minTime+","+data[0])
+							$this.kaipan15min = data[1];
+							$this.cur15minTime = data[0];
 							
-							//如果有不在allOrder里的单，且属于当前运行的cycle（用amount区分）
-							//if(order.amount!=$this.amount){
-							// 	continue;
-							// }
-							if(order.type==2||order.type==4){
-								continue;
-							}
-							if(order.type == 3 && order.status!=2 ){
-								$this.addOrder($this.allPlantArr,order.order_id,order);
-								
-							}	
-							if($this.search($this.amountArr,order.amount)==-1){
-								console.info(order.amount+"，没有找到这个amount。。。。。。。。。。。。。。。。。。。。。。。。。。。")
-								continue;
-							}
-
-							if($this.search($this.amountArr,order.amount)!=-1&&$this.searchOrder($this.allOrder, order.order_id) == -1){
-								//var orderTime = order.order_time;
-								//只要有lostorder就加进allOrder，剩下的事情交给allorder去做
-
-								$this.addOrder($this.allOrder, order.order_id, order)
-							}
-							if(order.type==1&&(order.status==1||order.status==2||order.status==0)){
-								var cycleTime = order.create_date-order.create_date%$this.cycleNum
-								if($this.curOrder==''){
-
-									$this.curOrder = order;
-									
-								}else{
-									if(order.create_date>$this.curOrder.create_date){
-										$this.curOrder = order;
-										$this.dueAmount = 0;
-									}
-								}
-							}
-							if((order.type==1)&&(order.status==1||order.status==2)){
-
-
-								
-								var thisAmount;
-								
-
-								thisAmount = order.deal_amount-$this.dueAmount
-								//$this.dueAmount += thisAmount
-								$this.dueAmount = order.deal_amount
-								
-								/*if(order.deal_amount<order.amount){
-									var remain = order.amount - order.deal_amount;
-									$this.remainOrder.remain = remain;
-									$this.remainOrder.id = order.order_id;
-								}*/
-
-								var price = parseFloat((order.price_avg*$this.pingduoRate1).toFixed(2));
-								//var amount = order.deal_amount;
-								$this.futureTrade(price,3,thisAmount);
-							}
-
-							if(order.status==2){
-
-								//移出系统遍历队列
-								$this.removeOrder($this.allOrder,order.order_id)
-								$this.removeOrder($this.unfinishArr,order.order_id)
-								//加入完成队列
-								//$this.addOrder($this.finishArr,order.order_id,order);
-								if(order.type==1){
-
-
-									//尝试去卖？
-
-									//所开多单全部成交，去平多单,
-									if($this.updateOrder($this.nextTickAmount,order.order_id,order)==-1){
-										$this.addOrder($this.nextTickAmount,order.order_id,order)
-									}
-								}
-
+							var curTime = new Date().getTime();
+							var delta = curTime%$this.cycleNum;
+							$this.delta = delta;
+							//if(delta>$this.deltaLimit){
+							if(curTime>$this.cur15minTime+30000){
+								console.info("k线数据来的太慢了。等下一个cycle")
 							}else{
-								//未完全成交
-								if($this.updateOrder($this.unfinishArr,order.order_id,order)==-1){
-									$this.addOrder($this.unfinishArr,order.order_id,order)
+								$this.makeorder();							
+							}
+							//$this.makePlantOrder();
+						}
+						
+						
+						
+
+
+					}
+					else if(msg['channel']=="ok_futureusd_orderinfo"){
+						console.info("okinfo come in")
+						if(msg['data'].result&&msg['data'].result!='false'){
+							for(var i=0; i<msg['data'].orders.length; i++){
+								var order = msg['data'].orders[i];
+								//$this.finishOrder(order);
+								//订单状态(0等待成交 1部分成交 2全部成交 -1撤单 4撤单处理中)
+								
+								//如果有不在allOrder里的单，且属于当前运行的cycle（用amount区分）
+								//if(order.amount!=$this.amount){
+								// 	continue;
+								// }
+								if(order.type==2||order.type==4){
+									continue;
 								}
-								var curTime = new Date().getTime();
-								//未完全成交的多单
-								if((order.status==0 || order.status==1) && order.type==1){
-									//超时未完全成交的多单
+								if(order.type == 3 && order.status!=2 ){
+									$this.addOrder($this.allPlantArr,order.order_id,order);
+									
+								}	
+								if($this.search($this.amountArr,order.amount)==-1){
+									console.info(order.amount+"，没有找到这个amount。。。。。。。。。。。。。。。。。。。。。。。。。。。")
+									continue;
+								}
+
+								if($this.search($this.amountArr,order.amount)!=-1&&$this.searchOrder($this.allOrder, order.order_id) == -1){
+									//var orderTime = order.order_time;
+									//只要有lostorder就加进allOrder，剩下的事情交给allorder去做
+
+									$this.addOrder($this.allOrder, order.order_id, order)
+								}
+								if(order.type==1&&(order.status==1||order.status==2||order.status==0)){
 									var cycleTime = order.create_date-order.create_date%$this.cycleNum
-									if(cycleTime+$this.cycleNum<curTime){
-										//预备撤单
-										$this.addOrder($this.retreatArr,order.order_id,order);
-									}
-									if(order.deal_amount>0){
-									//有所成交
-										if($this.updateOrder($this.nextTickAmount,order.order_id,order)==-1){
-											$this.addOrder($this.nextTickAmount,order.order_id,order)
+									if($this.curOrder==''){
+
+										$this.curOrder = order;
+										
+									}else{
+										if(order.create_date>$this.curOrder.create_date){
+											$this.curOrder = order;
+											$this.dueAmount = 0;
 										}
 									}
-									
-									
 								}
-								//已经撤单
-								if(order.status==-1){
-									if(order.deal_amount>0){
-									//有所成交
-										if($this.updateOrder($this.nextTickAmount,order.order_id,order)==-1){
-											$this.addOrder($this.nextTickAmount,order.order_id,order)
-										}
-									}
+								if((order.type==1)&&(order.status==1||order.status==2)){
+
+
+									
+									var thisAmount;
+									
+
+									thisAmount = order.deal_amount-$this.dueAmount
+									//$this.dueAmount += thisAmount
+									$this.dueAmount = order.deal_amount
+									
+									/*if(order.deal_amount<order.amount){
+										var remain = order.amount - order.deal_amount;
+										$this.remainOrder.remain = remain;
+										$this.remainOrder.id = order.order_id;
+									}*/
+
+									var price = parseFloat((order.price_avg*$this.pingduoRate1).toFixed(2));
+									//var amount = order.deal_amount;
+									$this.futureTrade(price,3,thisAmount);
+								}
+
+								if(order.status==2){
+
 									//移出系统遍历队列
 									$this.removeOrder($this.allOrder,order.order_id)
 									$this.removeOrder($this.unfinishArr,order.order_id)
-									//$this.removeOrder($this.retreatArr,order.order_id)
 									//加入完成队列
 									//$this.addOrder($this.finishArr,order.order_id,order);
+									if(order.type==1){
+
+
+										//尝试去卖？
+
+										//所开多单全部成交，去平多单,
+										if($this.updateOrder($this.nextTickAmount,order.order_id,order)==-1){
+											$this.addOrder($this.nextTickAmount,order.order_id,order)
+										}
+									}
+
+								}else{
+									//未完全成交
+									if($this.updateOrder($this.unfinishArr,order.order_id,order)==-1){
+										$this.addOrder($this.unfinishArr,order.order_id,order)
+									}
+									var curTime = new Date().getTime();
+									//未完全成交的多单
+									if((order.status==0 || order.status==1) && order.type==1){
+										//超时未完全成交的多单
+										var cycleTime = order.create_date-order.create_date%$this.cycleNum
+										if(cycleTime+$this.cycleNum<curTime){
+											//预备撤单
+											$this.addOrder($this.retreatArr,order.order_id,order);
+										}
+										if(order.deal_amount>0){
+										//有所成交
+											if($this.updateOrder($this.nextTickAmount,order.order_id,order)==-1){
+												$this.addOrder($this.nextTickAmount,order.order_id,order)
+											}
+										}
+										
+										
+									}
+									//已经撤单
+									if(order.status==-1){
+										if(order.deal_amount>0){
+										//有所成交
+											if($this.updateOrder($this.nextTickAmount,order.order_id,order)==-1){
+												$this.addOrder($this.nextTickAmount,order.order_id,order)
+											}
+										}
+										//移出系统遍历队列
+										$this.removeOrder($this.allOrder,order.order_id)
+										$this.removeOrder($this.unfinishArr,order.order_id)
+										//$this.removeOrder($this.retreatArr,order.order_id)
+										//加入完成队列
+										//$this.addOrder($this.finishArr,order.order_id,order);
+									}
+								}
+								//平单做统一处理
+								if(order.type==3){
+									//保留成交记录,不做删除
+									//$this.removeOrder($this.nextTickAmount,order.order_id)
+									$this.addOrder($this.plantArr,order.order_id,order);
+								}
+								
+
+							}
+						}
+					}
+					else if(msg['channel']=="ok_futureusd_trade"){
+
+						if(msg['data'].result&&msg['data'].result!='false'){
+							
+							var time = new Date().getTime()
+							$this.receiveTime = time;
+							var order = {
+								order_id: msg['data'].order_id,
+								order_time: time-time%$this.cycleNum
+							}
+
+							$this.allOrder.push(order);
+							//$this.proxyingArr.push(order);
+							
+						}
+					}else if(msg['channel']=='ok_futureusd_cancel_order'){
+
+						if(msg['data'].result&&msg['data'].result!='false'){
+							var id = msg['data'].order_id;
+
+							/*var orderIndex = $this.searchOrder($this.retreatArr,id);
+							var order = $this.retreatArr[orderIndex]
+							order.retreatInfoComeTime = $this.formatDate(new Date().getTime());
+							$this.addOrder($this.hasRetreatArr,id,order)*/
+							
+							$this.removeOrder($this.retreatArr,id);
+
+
+							//$this.removeOrder($this.unfinishArr,id)
+
+							
+						}
+					}else if(msg['channel']=="ok_sub_futureusd_positions"){
+						if(msg['data']['symbol']=='btc_usd'){
+							var positionArr = msg['data']['positions']
+							var dAmount,kAmount
+							for(var i in positionArr){
+								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
+									console.info("dudaole position in array0")
+									dAmount = parseFloat(positionArr[i]['hold_amount']);
+								}else if(positionArr[i]['position']=='2'&&positionArr[i]['lever_rate']==20){
+									kAmount = parseFloat(positionArr[i]['hold_amount']);
 								}
 							}
-							//平单做统一处理
-							if(order.type==3){
-								//保留成交记录,不做删除
-								//$this.removeOrder($this.nextTickAmount,order.order_id)
-								$this.addOrder($this.plantArr,order.order_id,order);
-							}
-							
+							var delta = dAmount - kAmount;
+							if(Math.abs(delta)<=$this.amount*2){
+								$this.kaiduoRate1 = $this.origin;
+							}else if(delta>0){
+								//持有多仓大于空仓，应减少做空难度，增加空仓数量
+								$this.kaiduoRate1 = 0.99902
 
+							}else{
+
+							}
 						}
+						
+
 					}
 				}
-				else if(msg['channel']=="ok_futureusd_trade"){
+			}else{
+				var msg = array;
+				for(var i in msg){
+					if(msg[i]['channel']=="ok_sub_futureusd_positions"){
+						if(msg[i]['data']['symbol']=='btc_usd'){
+							var positionArr = msg[i]['data']['positions']
+							var dAmount,kAmount
+							for(var i in positionArr){
+								
+								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
+									console.info("dudaole position in ARRAY")
+									dAmount = parseFloat(positionArr[i]['hold_amount']);
+									console.log("dAmount:"+dAmount)
+								}else if(positionArr[i]['position']=='2'&&positionArr[i]['lever_rate']==20){
+									kAmount = parseFloat(positionArr[i]['hold_amount']);
+								}
+								
+							}
+							var delta = dAmount - kAmount;
+							if(Math.abs(delta)<=$this.amount*2){
+								$this.kaiduoRate1 = $this.origin;
+								console.info("reset kaiduorate:"+$this.kaiduoRate1)
+							}else if(delta>0){
+								//持有多仓大于空仓，应减少做空难度，增加空仓数量
+								
 
-					if(msg['data'].result&&msg['data'].result!='false'){
-						
-						var time = new Date().getTime()
-						$this.receiveTime = time;
-						var order = {
-							order_id: msg['data'].order_id,
-							order_time: time-time%$this.cycleNum
+							}else{
+								$this.kaiduoRate1 = 0.99902
+								console.info("add kaiduorate:"+$this.kaiduoRate1)
+							}
+
 						}
-
-						$this.allOrder.push(order);
-						//$this.proxyingArr.push(order);
 						
-					}
-				}else if(msg['channel']=='ok_futureusd_cancel_order'){
 
-					if(msg['data'].result&&msg['data'].result!='false'){
-						var id = msg['data'].order_id;
-
-						/*var orderIndex = $this.searchOrder($this.retreatArr,id);
-						var order = $this.retreatArr[orderIndex]
-						order.retreatInfoComeTime = $this.formatDate(new Date().getTime());
-						$this.addOrder($this.hasRetreatArr,id,order)*/
-						
-						$this.removeOrder($this.retreatArr,id);
-
-
-						//$this.removeOrder($this.unfinishArr,id)
-
-						
 					}
 				}
 			}
@@ -873,6 +939,7 @@ return;
 			$this.doSend(str);
 			//现货交易、合约交易测试
 			//tradeTest();
+			$this.futurePositions();
 			
 		},
 		createTable: function(array) {
@@ -986,6 +1053,13 @@ return;
 			$this.doSend("{'event': 'addChannel','channel': 'ok_futureusd_cancel_order','parameters': {'api_key': '"
 					+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'btc_usd','order_id': '" + orderId
 					+ "','contract_type': 'quarter'}}");
+		},
+		futurePositions: function() {
+			var $this = this;
+			var okCoinWebSocket = $this.okCoinWebSocket;
+			var sign = MD5("api_key=" + okCoinWebSocket.api_key + "&secret_key=" + okCoinWebSocket.secret_key);
+			$this.doSend("{'event':'addChannel','channel':'ok_sub_futureusd_positions','parameters' :{'api_key':'"
+					+ okCoinWebSocket.api_key + "','sign':'" + sign + "'}}");
 		}
 			
 	
@@ -1025,6 +1099,8 @@ return;
 			setInterval($this.retreat,200);
 
 			setInterval($this.ensureAllOrder,10000);
+
+
 		}
 
 		

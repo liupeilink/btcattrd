@@ -714,7 +714,8 @@ return;
 					}else if(msg['channel']=="ok_sub_futureusd_positions"){
 						if(msg['data']['symbol']=='btc_usd'){
 							var positionArr = msg['data']['positions']
-							var dAmount,kAmount
+							var dAmount=0;
+							var kAmount=0;
 							for(var i in positionArr){
 								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
 									console.info("dudaole position in array0")
@@ -744,7 +745,8 @@ return;
 					if(msg[i]['channel']=="ok_sub_futureusd_positions"){
 						if(msg[i]['data']['symbol']=='btc_usd'){
 							var positionArr = msg[i]['data']['positions']
-							var dAmount,kAmount
+							var dAmount=0;
+							var kAmount=0;
 							for(var i in positionArr){
 								
 								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){

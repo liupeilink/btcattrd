@@ -605,8 +605,10 @@ return;
 								var price = parseFloat((order.price_avg*$this.pingduoRate1).toFixed(2));
 								//var amount = order.deal_amount;
 								//$this.futureTrade(price,3,thisAmount);
+								var am = order.amount
 								for(var i=0;i<order.amount;i++){
-									$this.futureTrade(price,3,1);
+									$this.futureTrade(price,3,am);
+									am = am - 1;
 								}
 							}
 

@@ -212,8 +212,8 @@ var app = new Vue({
 
 		cycleNum:300000,
 		subKline:'ok_sub_futureusd_btc_kline_quarter_5min',
-		kaiduoRate1:0.99501,
-		kaiduoRate2:0.9901,
+		kaiduoRate1:0.9901,
+		//kaiduoRate2:0.9901,
 		pingduoRate1:1.00199,
 		pingduoRate2:1.00199,
 		deltaLimit:30000,
@@ -604,12 +604,9 @@ return;
 
 								var price = parseFloat((order.price_avg*$this.pingduoRate1).toFixed(2));
 								//var amount = order.deal_amount;
-								//$this.futureTrade(price,3,thisAmount);
-								var am = order.amount
-								for(var i=0;i<order.amount;i++){
-									$this.futureTrade(price,3,am);
-									am = am - 1;
-								}
+								$this.futureTrade(price,3,thisAmount);
+								
+								
 							}
 
 							if(order.status==2){
@@ -783,9 +780,9 @@ return;
 				$this.futureTrade(price2+0.55,1,$this.amount);
 			},30)//30ms后请求，减缓服务器压力，减少超时错误*/
 			var price1 = parseFloat(($this.kaipan15min * $this.kaiduoRate1).toFixed(2));
-			var price2 = parseFloat(($this.kaipan15min * $this.kaiduoRate2).toFixed(2));
+			//var price2 = parseFloat(($this.kaipan15min * $this.kaiduoRate2).toFixed(2));
 			$this.futureTrade(price1,1,$this.amount);
-			$this.futureTrade(price2,1,$this.amount);
+			//$this.futureTrade(price2,1,$this.amount);
 			/*setTimeout(function(){
 				$this.futureTrade(price2,1,$this.amount);
 			},30)//30ms后请求，减缓服务器压力，减少超时错误*/

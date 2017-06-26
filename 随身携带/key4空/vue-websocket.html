@@ -26,6 +26,7 @@
 		<button @click="testspeed">test speed</button>
 		<button @click="trans">换仓</button>
 		{{receiveTime - sendTime}}
+		5min开盘{{kaipan15min}}
 <!-- 		<p>checkorder次数{{ reqCount }}</p>
 		<p>发送请求总次数{{ sendCount }}</p>
 		<p>消息达到次数{{ recCount }}</p> -->
@@ -214,11 +215,11 @@ var app = new Vue({
 		subKline:'ok_sub_futureusd_btc_kline_quarter_5min',
 		kaiduoRate1:1.00201,
 		kaiduoRate2:0.001,
-		pingduoRate1:0.998,
+		pingduoRate1:0.99802,
 		pingduoRate2:1.0014,
 		deltaLimit:30000,
 		delta:0,
-		amount:4,
+		amount:7,
 		leverRate:20,
 
 		origin:1.00201,
@@ -234,7 +235,7 @@ var app = new Vue({
 		// recCount:0
 
 		//amountArr:[5,3,3,2],
-		amountArr:[4,4,4,4],
+		amountArr:[7,7,7,7],
 		fazhi:[3000,2750,2500],
 		// amountArr:[3,3,3,3],
 		// fazhi:[3000,2750,2500],
@@ -729,10 +730,10 @@ return;
 								$this.kaiduoRate1 = $this.origin;
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
-								$this.kaiduoRate1 = 1.00101
+								$this.kaiduoRate1 = 1.00151
 
 							}else{
-								//$this.kaiduoRate1 = 1.0035
+								$this.kaiduoRate1 = 1.003
 							}
 						}
 						
@@ -765,12 +766,13 @@ return;
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
 								
-								$this.kaiduoRate1 = 1.00101
+								$this.kaiduoRate1 = 1.00151
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 
 							}else{
 								//减少做多难度增加做空难度
-								//$this.kaiduoRate1 = 1.0035
+								$this.kaiduoRate1 = 1.003
+								console.info("add kaiduorate:"+$this.kaiduoRate1)
 								
 							}
 

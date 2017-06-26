@@ -23,7 +23,7 @@
 		<button @click="futureTrade(1000,1,1)">下单</button>
 		<button @click="futureOrderInfo(-1)">查-1</button>
 		<button @click="futureCancelOrder(6465769535)">撤xxx</button>
-		<button @click="testspeed">test speed</button>
+		<button @click="testLength">test length</button>
 		<button @click="trans">换仓</button>
 		{{receiveTime - sendTime}}
 <!-- 		<p>checkorder次数{{ reqCount }}</p>
@@ -218,7 +218,7 @@ var app = new Vue({
 		pingduoRate2:1.0014,
 		deltaLimit:30000,
 		delta:0,
-		amount:4,
+		amount:7,
 		leverRate:20,
 
 		origin:0.99802,
@@ -234,7 +234,7 @@ var app = new Vue({
 		// recCount:0
 
 		//amountArr:[3,3,5,7],
-		amountArr:[4,4,4,4],
+		amountArr:[7,7,7,7],
 		fazhi:[3000,2750,2500],
 		// amountArr:[3,3,3,3],
 		// fazhi:[3000,2750,2500],
@@ -283,6 +283,52 @@ var app = new Vue({
 		}*/
 	},
 	methods: {
+		testLength: function(){
+			var $this = this;
+			var obj = {
+				okCoinWebSocket:{},
+
+
+
+				//当前kline开盘价
+				kaipan15min:'',
+
+				
+				
+				//所有未完成订单 {order_id:'',seq:''}
+				allOrder:[],
+				//所有已完成、未完成订单 
+				finishArr: [],
+				unfinishArr: [],
+
+				//将要撤单的订单
+				retreatArr: [],
+				//将要平的多单
+				plantArr: [],
+				//将要平仓的多单
+				nextTickAmount: [],
+
+				curOrder:'',
+				dueAmount:0,
+
+				//当前所有未成交平单和启动后已成交平单,包括其他运行中的appkey，新的季度合约出现后统一处理
+				allPlantArr:[],
+				//移仓
+				transArr:[],
+				handleTransArr:[]
+			}
+			for(var attr in obj){
+				var l;
+				if(typeof $this[attr].length!=="undefined"){
+					l = $this[attr].length
+					console.info(attr+":"+l);
+				}else{
+					console.info(attr+":"+$this[attr])
+				}
+				
+			}
+
+		},
 		trans:function(){
 			var $this = this;
 			
@@ -730,11 +776,11 @@ return;
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
 								
-								//$this.kaiduoRate1 = 0.9965
+								$this.kaiduoRate1 = 0.997
 
 
 							}else{
-								$this.kaiduoRate1 = 0.99902
+								$this.kaiduoRate1 = 0.99852
 							}
 						}
 						
@@ -766,11 +812,13 @@ return;
 								console.info("reset kaiduorate:"+$this.kaiduoRate1)
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
-								//$this.kaiduoRate1 = 0.9965
+								$this.kaiduoRate1 = 0.997
+								console.info("add kaiduorate:"+$this.kaiduoRate1)
+
 								
 
 							}else{
-								$this.kaiduoRate1 = 0.99902
+								$this.kaiduoRate1 = 0.99852
 								
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 							}

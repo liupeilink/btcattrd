@@ -642,6 +642,7 @@ return;
 										var cycleTime = order.create_date-order.create_date%$this.cycleNum
 										if(cycleTime+$this.cycleNum<curTime){
 											//预备撤单
+											//$this.dueAmount = 0;
 											$this.addOrder($this.retreatArr,order.order_id,order);
 										}
 										if(order.deal_amount>0){
@@ -1117,6 +1118,12 @@ return;
 				random = 350000
 			}
 			setTimeout(function(){
+				if($this.dueAmount!=0){
+					setTimeout(function(){
+						location.reload()
+					},$this.cycleNum);
+					return;
+				}
 				var curTime = new Date().getTime();
 				console.info("reload:"+$this.formatDate(curTime))
 				location.reload();

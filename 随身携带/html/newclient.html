@@ -1036,6 +1036,12 @@ return;
 				random = 350000
 			}
 			setTimeout(function(){
+				if($this.dueAmount!=0){
+					setTimeout(function(){
+						location.reload()
+					},$this.cycleNum);
+					return;
+				}
 				var curTime = new Date().getTime();
 				console.info("reload:"+$this.formatDate(curTime))
 				location.reload();

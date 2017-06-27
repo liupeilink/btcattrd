@@ -687,6 +687,7 @@ return;
 										var cycleTime = order.create_date-order.create_date%$this.cycleNum
 										if(cycleTime+$this.cycleNum<curTime){
 											//预备撤单
+											$this.dueAmount = 0;
 											$this.addOrder($this.retreatArr,order.order_id,order);
 										}
 										if(order.deal_amount>0){
@@ -1160,14 +1161,20 @@ return;
 			if(random<300000||random>600000){
 				random = 350000
 			}
-			setTimeout(function(){
-				if($this.dueAmount!=0){
-					setTimeout(function(){
-						location.reload()
-					},$this.cycleNum);
-					return;
-				}
+			setInterval(function(){
 				var curTime = new Date().getTime();
+				if($this.dueAmount!=0||$this.dueAmount!=$this.amount){
+					if(curTime-$this.cur15minTime>$this.cycleNum){
+						location.reload();
+					}else{
+						return;
+					}
+					/*setTimeout(function(){
+						location.reload()
+					},$this.cycleNum);*/
+					
+				}
+				
 				console.info("reload:"+$this.formatDate(curTime))
 				location.reload();
 

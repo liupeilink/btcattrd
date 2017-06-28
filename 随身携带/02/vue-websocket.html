@@ -1168,7 +1168,7 @@ return;
 			}
 			setInterval(function(){
 				var curTime = new Date().getTime();
-				if($this.dueAmount!=0&&$this.dueAmount!=$this.amount){
+				if($this.dueAmount>0&&$this.dueAmount<$this.amount){
 					console.log("超时："+(curTime-$this.cur15minTime>$this.cycleNum))
 					if(curTime-$this.cur15minTime>$this.cycleNum){
 						location.reload();
@@ -1180,7 +1180,8 @@ return;
 					},$this.cycleNum);*/
 					
 				}
-				if($this.cycleNum-curTime%$this.cycleNum<20000){
+				//如果当前时间在买点前后20秒，不刷新
+				if($this.cycleNum-curTime%$this.cycleNum<20000||curTime%$this.cycleNum<20000){
 					return;
 				}
 				

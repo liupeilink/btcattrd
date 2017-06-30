@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>key4开空一阶5min</title>
+	<title>高频多</title>
 	<style>
 		th {background: #ccc;}
 		table td,table th{
@@ -23,10 +23,9 @@
 		<button @click="futureTrade(1000,1,1)">下单</button>
 		<button @click="futureOrderInfo(-1)">查-1</button>
 		<button @click="futureCancelOrder(6465769535)">撤xxx</button>
-		<button @click="testspeed">test speed</button>
+		<button @click="testLength">test length</button>
 		<button @click="trans">换仓</button>
 		{{receiveTime - sendTime}}
-		5min开盘{{kaipan15min}}
 		<p>dueAmount:{{dueAmount}}</p>
 <!-- 		<p>checkorder次数{{ reqCount }}</p>
 		<p>发送请求总次数{{ sendCount }}</p>
@@ -212,18 +211,18 @@ var app = new Vue({
 		amount:16,
 		leverRate:20*/
 
-		cycleNum:300000,
-		subKline:'ok_sub_futureusd_btc_kline_quarter_5min',
-		kaiduoRate1:1.00201,
+		cycleNum:60000,
+		subKline:'ok_sub_futureusd_btc_kline_quarter_1min',
+		kaiduoRate1:0.99902,
 		kaiduoRate2:0.001,
-		pingduoRate1:0.99802,
+		pingduoRate1:1.00148,
 		pingduoRate2:1.0014,
 		deltaLimit:30000,
 		delta:0,
-		amount:8,
+		amount:3,
 		leverRate:20,
 
-		origin:1.00201,
+		origin:0.99802,
 
 
 		curOrder:'',
@@ -235,9 +234,9 @@ var app = new Vue({
 		// sendCount:0,
 		// recCount:0
 
-		//amountArr:[5,3,3,2],
+		//amountArr:[3,3,5,7],
 		//amountArr:[7,6,5,4],
-		amountArr:[9,8,7,5],
+		amountArr:[3,3,3,3],
 		fazhi:[3000,2500,2000],
 		// amountArr:[3,3,3,3],
 		// fazhi:[3000,2750,2500],
@@ -247,7 +246,9 @@ var app = new Vue({
 		allPlantArr:[],
 		//移仓
 		transArr:[],
-		handleTransArr:[]
+		handleTransArr:[],
+
+		shoupan1min:''
 
 
 
@@ -286,12 +287,58 @@ var app = new Vue({
 		}*/
 	},
 	methods: {
+		testLength: function(){
+			var $this = this;
+			var obj = {
+				okCoinWebSocket:{},
+
+
+
+				//当前kline开盘价
+				kaipan15min:'',
+
+				
+				
+				//所有未完成订单 {order_id:'',seq:''}
+				allOrder:[],
+				//所有已完成、未完成订单 
+				finishArr: [],
+				unfinishArr: [],
+
+				//将要撤单的订单
+				retreatArr: [],
+				//将要平的多单
+				plantArr: [],
+				//将要平仓的多单
+				nextTickAmount: [],
+
+				curOrder:'',
+				dueAmount:0,
+
+				//当前所有未成交平单和启动后已成交平单,包括其他运行中的appkey，新的季度合约出现后统一处理
+				allPlantArr:[],
+				//移仓
+				transArr:[],
+				handleTransArr:[]
+			}
+			for(var attr in obj){
+				var l;
+				if(typeof $this[attr].length!=="undefined"){
+					l = $this[attr].length
+					console.info(attr+":"+l);
+				}else{
+					console.info(attr+":"+$this[attr])
+				}
+				
+			}
+
+		},
 		trans:function(){
 			var $this = this;
 			
 			$this.handleTransArr.length=0;
 			for(var i in $this.transArr){
-				if($this.transArr[i].type == 4 && $this.transArr[i].contract_name=="BTC0929"){
+				if($this.transArr[i].type == 3 && $this.transArr[i].contract_name=="BTC0929"){
 					$this.handleTransArr.push($this.transArr[i]);
 				}
 			}
@@ -381,7 +428,7 @@ return;
 		},
 		start: function(){
 			var $this = this;
-			$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "785bdbfb-e1f1-4d96-b399-0b0ef20fb28d", "0695DFB2F16F248FD6A457550BCD5C0A");
+			$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "0b8d2c87-cd53-4458-8a6a-ef7363a744fe", "DE9F7E166BD6ABED472C2B5FC21C4C29");
 			$this.startTime = new Date().getTime();
 
 			/*//设置2.5秒的误差
@@ -438,7 +485,7 @@ return;
 			for(var i=0; i<$this.allOrder.length; i++){
 				//console.info("checkorders")
 				//$this.reqCount++
-				if($this.allOrder[i].type!=4){
+				if($this.allOrder[i].type!=3){
 					$this.futureOrderInfo($this.allOrder[i].order_id);
 				}
 				
@@ -528,7 +575,7 @@ return;
 						}
 
 						if($this.cur15minTime!='' && $this.cur15minTime < data[0]){
-							console.info($this.cur15minTime+","+data[0])
+							console.info("..............."+$this.cur15minTime+","+data[0])
 							$this.kaipan15min = data[1];
 							$this.cur15minTime = data[0];
 							
@@ -543,6 +590,7 @@ return;
 							}
 							//$this.makePlantOrder();
 						}
+						$this.shoupan1min = data[4]
 						
 						
 						
@@ -561,10 +609,10 @@ return;
 								//if(order.amount!=$this.amount){
 								// 	continue;
 								// }
-								if(order.type==1||order.type==3){
+								if(order.type==2||order.type==4){
 									continue;
 								}
-								if(order.type == 4 && order.status!=2 ){
+								if(order.type == 3 && order.status!=2 ){
 									$this.addOrder($this.allPlantArr,order.order_id,order);
 									
 								}	
@@ -579,7 +627,7 @@ return;
 
 									$this.addOrder($this.allOrder, order.order_id, order)
 								}
-								if(order.type==2&&(order.status==1||order.status==2||order.status==0)){
+								if(order.type==1&&(order.status==1||order.status==2||order.status==0)){
 									var cycleTime = order.create_date-order.create_date%$this.cycleNum
 									if($this.curOrder==''){
 
@@ -592,9 +640,9 @@ return;
 										}
 									}
 								}
-								if((order.type==2)&&(order.status==1||order.status==2)){
+								if((order.type==1)&&(order.status==1||order.status==2)){
 
-									//bug: 新开单 与将要撤掉的未完全成交订单 冲突
+
 									
 									var thisAmount;
 									
@@ -611,7 +659,7 @@ return;
 
 									var price = parseFloat((order.price_avg*$this.pingduoRate1).toFixed(2));
 									//var amount = order.deal_amount;
-									$this.futureTrade(price,4,thisAmount);
+									$this.futureTrade(price,3,thisAmount);
 								}
 
 								if(order.status==2){
@@ -621,7 +669,7 @@ return;
 									$this.removeOrder($this.unfinishArr,order.order_id)
 									//加入完成队列
 									//$this.addOrder($this.finishArr,order.order_id,order);
-									if(order.type==2){
+									if(order.type==1){
 
 
 										//尝试去卖？
@@ -639,7 +687,7 @@ return;
 									}
 									var curTime = new Date().getTime();
 									//未完全成交的多单
-									if((order.status==0 || order.status==1) && order.type==2){
+									if((order.status==0 || order.status==1) && order.type==1){
 										//超时未完全成交的多单
 										var cycleTime = order.create_date-order.create_date%$this.cycleNum
 										if(cycleTime+$this.cycleNum<curTime){
@@ -673,7 +721,7 @@ return;
 									}
 								}
 								//平单做统一处理
-								if(order.type==4){
+								if(order.type==3){
 									//保留成交记录,不做删除
 									//$this.removeOrder($this.nextTickAmount,order.order_id)
 									$this.addOrder($this.plantArr,order.order_id,order);
@@ -718,8 +766,8 @@ return;
 					}else if(msg['channel']=="ok_sub_futureusd_positions"){
 						if(msg['data']['symbol']=='btc_usd'){
 							var positionArr = msg['data']['positions']
-							var dAmount = 0;
-							var kAmount = 0;  
+							var dAmount=0;
+							var kAmount=0;
 							for(var i in positionArr){
 								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
 									console.info("dudaole position in array0")
@@ -730,15 +778,17 @@ return;
 							}
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
-							if(Math.abs(delta)<=$this.amount*2){
 							//if(Math.abs(delta)<=max*1/3){
+							if(Math.abs(delta)<=$this.amount*2){
 								$this.kaiduoRate1 = $this.origin;
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
-								$this.kaiduoRate1 = 1.00151
+								
+								$this.kaiduoRate1 = 0.997
+
 
 							}else{
-								$this.kaiduoRate1 = 1.003
+								//$this.kaiduoRate1 = 0.99852
 							}
 						}
 						
@@ -752,7 +802,7 @@ return;
 						if(msg[i]['data']['symbol']=='btc_usd'){
 							var positionArr = msg[i]['data']['positions']
 							var dAmount=0;
-							var kAmount=0
+							var kAmount=0;
 							for(var i in positionArr){
 								
 								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
@@ -766,21 +816,21 @@ return;
 							}
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
-							if(Math.abs(delta)<=$this.amount*2){
 							//if(Math.abs(delta)<=max*1/3){
+							if(Math.abs(delta)<=$this.amount*2){
 								$this.kaiduoRate1 = $this.origin;
 								console.info("reset kaiduorate:"+$this.kaiduoRate1)
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
-								
-								$this.kaiduoRate1 = 1.00151
+								$this.kaiduoRate1 = 0.997
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 
-							}else{
-								//减少做多难度增加做空难度
-								$this.kaiduoRate1 = 1.003
-								console.info("add kaiduorate:"+$this.kaiduoRate1)
 								
+
+							}else{
+								//$this.kaiduoRate1 = 0.99852
+								
+								console.info("add kaiduorate:"+$this.kaiduoRate1)
 							}
 
 						}
@@ -789,7 +839,6 @@ return;
 					}
 				}
 			}
-			
 
 			/*for (var i = 0; i < array.length; i++) {
 				for (var j = 0;j < array[i].length; j++) {
@@ -858,16 +907,16 @@ return;
 			setTimeout(function(){
 				$this.futureTrade(price2+0.55,1,$this.amount);
 			},30)//30ms后请求，减缓服务器压力，减少超时错误*/
-			var price1 = parseFloat(($this.kaipan15min * $this.kaiduoRate1).toFixed(2));
+			var price1 = parseFloat(($this.shoupan1min * $this.kaiduoRate1).toFixed(2));
 			//var price2 = parseFloat(($this.kaipan15min * $this.kaiduoRate2).toFixed(2));
-			$this.futureTrade(price1,2,$this.amount);
+			$this.futureTrade(price1,1,$this.amount);
 			/*setTimeout(function(){
 				$this.futureTrade(price2,1,$this.amount);
 			},30)//30ms后请求，减缓服务器压力，减少超时错误*/
 			
 
 		},
-/*		makePlantOrder: function(){
+		makePlantOrder: function(){
 			var $this = this;
 			var length = $this.nextTickAmount.length;
 			var curTime = new Date().getTime();
@@ -905,7 +954,7 @@ return;
 				}		
 			} 
 
-		},*/
+		},
 
 		print: function(message) {
 			var status = document.getElementById("status");
@@ -1044,7 +1093,6 @@ return;
 			$this.doSend("{'event': 'addChannel','channel': 'ok_futureusd_orderinfo','parameters': {'api_key': '"
 					+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'btc_usd','order_id': '" + orderId
 					+ "','contract_type': 'quarter','status':'1','current_page':'1','page_length':'50'}}");
-					
 		},
 		//合约下单
 		futureTrade: function (price,type,amount) {
@@ -1116,7 +1164,6 @@ return;
 
 			setInterval($this.ensureAllOrder,10000);
 
-
 			var cur = new Date().getTime();
 			var random = cur%1000*1000
 			//0~999s
@@ -1147,8 +1194,8 @@ return;
 
 				
 			},random)
-		}
 
+		}
 		$this.start();
 
 		

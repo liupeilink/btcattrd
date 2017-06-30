@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>key4开空一阶5min</title>
+	<title>高频空</title>
 	<style>
 		th {background: #ccc;}
 		table td,table th{
@@ -212,15 +212,15 @@ var app = new Vue({
 		amount:16,
 		leverRate:20*/
 
-		cycleNum:300000,
-		subKline:'ok_sub_futureusd_btc_kline_quarter_5min',
-		kaiduoRate1:1.00201,
+		cycleNum:60000,
+		subKline:'ok_sub_futureusd_btc_kline_quarter_1min',
+		kaiduoRate1:1.00101,
 		kaiduoRate2:0.001,
-		pingduoRate1:0.99802,
+		pingduoRate1:0.99852,
 		pingduoRate2:1.0014,
 		deltaLimit:30000,
 		delta:0,
-		amount:8,
+		amount:3,
 		leverRate:20,
 
 		origin:1.00201,
@@ -237,7 +237,7 @@ var app = new Vue({
 
 		//amountArr:[5,3,3,2],
 		//amountArr:[7,6,5,4],
-		amountArr:[9,8,7,5],
+		amountArr:[3,3,3,3],
 		fazhi:[3000,2500,2000],
 		// amountArr:[3,3,3,3],
 		// fazhi:[3000,2750,2500],
@@ -247,7 +247,9 @@ var app = new Vue({
 		allPlantArr:[],
 		//移仓
 		transArr:[],
-		handleTransArr:[]
+		handleTransArr:[],
+
+		shoupan1min:''
 
 
 
@@ -381,7 +383,7 @@ return;
 		},
 		start: function(){
 			var $this = this;
-			$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "785bdbfb-e1f1-4d96-b399-0b0ef20fb28d", "0695DFB2F16F248FD6A457550BCD5C0A");
+			$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "d619360b-907e-42fc-b405-695cc1185ae0", "29002E111A2C28679D94B0F8553F1C40");
 			$this.startTime = new Date().getTime();
 
 			/*//设置2.5秒的误差
@@ -544,7 +546,7 @@ return;
 							//$this.makePlantOrder();
 						}
 						
-						
+						$this.shoupan1min = data[4]
 						
 
 
@@ -594,7 +596,7 @@ return;
 								}
 								if((order.type==2)&&(order.status==1||order.status==2)){
 
-									//bug: 新开单 与将要撤掉的未完全成交订单 冲突
+
 									
 									var thisAmount;
 									
@@ -735,7 +737,7 @@ return;
 								$this.kaiduoRate1 = $this.origin;
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
-								$this.kaiduoRate1 = 1.00151
+								//$this.kaiduoRate1 = 1.00151
 
 							}else{
 								$this.kaiduoRate1 = 1.003
@@ -773,7 +775,7 @@ return;
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
 								
-								$this.kaiduoRate1 = 1.00151
+								//$this.kaiduoRate1 = 1.00151
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 
 							}else{
@@ -858,7 +860,7 @@ return;
 			setTimeout(function(){
 				$this.futureTrade(price2+0.55,1,$this.amount);
 			},30)//30ms后请求，减缓服务器压力，减少超时错误*/
-			var price1 = parseFloat(($this.kaipan15min * $this.kaiduoRate1).toFixed(2));
+			var price1 = parseFloat(($this.shoupan1min * $this.kaiduoRate1).toFixed(2));
 			//var price2 = parseFloat(($this.kaipan15min * $this.kaiduoRate2).toFixed(2));
 			$this.futureTrade(price1,2,$this.amount);
 			/*setTimeout(function(){

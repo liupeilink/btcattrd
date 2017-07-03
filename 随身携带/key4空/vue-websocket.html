@@ -216,8 +216,8 @@ var app = new Vue({
 		subKline:'ok_sub_futureusd_btc_kline_quarter_5min',
 		kaiduoRate1:1.00201,
 		kaiduoRate2:0.001,
-		//pingduoRate1:0.99802,
-		pingduoRate1:0.99402,
+		pingduoRate1:0.99802,
+		//pingduoRate1:0.99402,
 		pingduoRate2:1.0014,
 		deltaLimit:30000,
 		delta:0,
@@ -610,7 +610,9 @@ return;
 										$this.remainOrder.id = order.order_id;
 									}*/
 
-									var price = parseFloat((order.price_avg*$this.pingduoRate1).toFixed(2));
+									//var random = (new Date().getTime()) % 1000 / 1000 * 0.001
+
+									var price = parseFloat((order.price_avg*($this.pingduoRate1)).toFixed(2));
 									//var amount = order.deal_amount;
 									$this.futureTrade(price,4,thisAmount);
 								}

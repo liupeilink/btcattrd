@@ -222,6 +222,7 @@ var app = new Vue({
 		deltaLimit:30000,
 		delta:0,
 		amount:8,
+		changingAmount: 0,
 		leverRate:20,
 
 		origin:1.00201,
@@ -570,7 +571,7 @@ return;
 									$this.addOrder($this.allPlantArr,order.order_id,order);
 									
 								}	
-								if($this.search($this.amountArr,order.amount)==-1){
+								if($this.search($this.amountArr,order.amount)==-1 && $this.changingAmount!=order.amount){
 									console.info(order.amount+"，没有找到这个amount。。。。。。。。。。。。。。。。。。。。。。。。。。。")
 									continue;
 								}
@@ -740,6 +741,7 @@ return;
 								$this.kaiduoRate1 = $this.origin;
 							}else if(delta>0){
 								var d = Math.floor(delta/2)
+								$this.changingAmount = d;
 								$this.amountArr = [d,d,d,d];
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
 								$this.kaiduoRate1 = 1.00151
@@ -781,6 +783,7 @@ return;
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
 								var d = Math.floor(delta/2)
+								$this.changingAmount = d;
 								$this.amountArr = [d,d,d,d];
 								$this.kaiduoRate1 = 1.00151
 								console.info("add kaiduorate:"+$this.kaiduoRate1)

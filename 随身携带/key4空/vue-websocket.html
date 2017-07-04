@@ -736,13 +736,19 @@ return;
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
 							if(Math.abs(delta)<=$this.originArr[1]*2){
+								$this.changingAmount = 0;
 							//if(Math.abs(delta)<=max*1/3){
 								$this.amountArr = $this.originArr;
 								$this.kaiduoRate1 = $this.origin;
 							}else if(delta>0){
-								var d = Math.floor(delta/2)
-								$this.changingAmount = d;
-								$this.amountArr = [d,d,d,d];
+								if(kAmount<10*originArr[1]){
+									$this.amountArr = $this.originArr;
+								}else{
+									var d = Math.floor(delta/2)
+									$this.changingAmount = d;
+									$this.amountArr = [d,d,d,d];
+								}
+								
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
 								$this.kaiduoRate1 = 1.00151
 
@@ -776,15 +782,20 @@ return;
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
 							if(Math.abs(delta)<=$this.originArr[1]*2){
+								$this.changingAmount = 0;
 							//if(Math.abs(delta)<=max*1/3){
 								$this.amountArr = $this.originArr;
 								$this.kaiduoRate1 = $this.origin;
 								console.info("reset kaiduorate:"+$this.kaiduoRate1)
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
-								var d = Math.floor(delta/2)
-								$this.changingAmount = d;
-								$this.amountArr = [d,d,d,d];
+								if(kAmount<10*originArr[1]){
+									$this.amountArr = $this.originArr;
+								}else{
+									var d = Math.floor(delta/2)
+									$this.changingAmount = d;
+									$this.amountArr = [d,d,d,d];
+								}
 								$this.kaiduoRate1 = 1.00151
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 
@@ -1135,7 +1146,7 @@ return;
 			if(random<300000||random>600000){
 				random = 350000
 			}
-			setInterval(function(){
+			/*setInterval(function(){
 				var curTime = new Date().getTime();
 				if($this.dueAmount>0&&$this.dueAmount<$this.amount){
 					console.log("超时："+(curTime-$this.cur15minTime>$this.cycleNum))
@@ -1144,9 +1155,7 @@ return;
 					}else{
 						return;
 					}
-					/*setTimeout(function(){
-						location.reload()
-					},$this.cycleNum);*/
+					
 					
 				}
 				//如果当前时间在买点前后20秒，不刷新
@@ -1157,6 +1166,19 @@ return;
 				console.info("reload:"+$this.formatDate(curTime))
 				location.reload();
 
+				
+			},random)*/
+			setInterval(function(){
+				var curTime = new Date().getTime();
+				if($this.cycleNum-curTime%$this.cycleNum<20000||curTime%$this.cycleNum<20000){
+					return;
+				}
+				if(curTime-$this.cur15minTime>$this.cycleNum){
+					location.reload();
+				}else{
+					return;
+				}
+				
 				
 			},random)
 		}

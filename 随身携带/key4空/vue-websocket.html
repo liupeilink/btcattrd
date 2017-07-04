@@ -735,22 +735,28 @@ return;
 							}
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
-							if(Math.abs(delta)<=$this.originArr[1]*4){
+							if(Math.abs(delta)<=$this.originArr[1]*2){
 								$this.changingAmount = 0;
 							//if(Math.abs(delta)<=max*1/3){
 								$this.amountArr = $this.originArr;
 								$this.kaiduoRate1 = $this.origin;
 							}else if(delta>0){
-								if(kAmount<10*originArr[1]){
+								
+								$this.kaiduoRate1 = 1.00151;
+								console.info("add kaiduorate:"+$this.kaiduoRate1)
+
+								if(kAmount<10*$this.originArr[1]){
 									$this.amountArr = $this.originArr;
 								}else{
-									var d = Math.floor(delta/4)
+									var d = Math.floor(-delta/2)
+									if(d>10*$this.originArr[1]){
+										$this.amountArr = $this.originArr;
+										return;
+									}
 									$this.changingAmount = d;
+									console.log("update changingAmount:"+$this.changingAmount)
 									$this.amountArr = [d,d,d,d];
-								}
-								
-								//持有多仓大于空仓，应减少做空难度，增加空仓数量
-								$this.kaiduoRate1 = 1.00151
+								}								
 
 							}else{
 								$this.kaiduoRate1 = 1.003
@@ -781,24 +787,28 @@ return;
 							}
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
-							if(Math.abs(delta)<=$this.originArr[1]*4){
+							if(Math.abs(delta)<=$this.originArr[1]*2){
 								$this.changingAmount = 0;
 							//if(Math.abs(delta)<=max*1/3){
 								$this.amountArr = $this.originArr;
 								$this.kaiduoRate1 = $this.origin;
 								console.info("reset kaiduorate:"+$this.kaiduoRate1)
 							}else if(delta>0){
-								//持有多仓大于空仓，应减少做空难度，增加空仓数量
-								if(kAmount<10*originArr[1]){
-									$this.amountArr = $this.originArr;
-								}else{
-									var d = Math.floor(delta/4)
-									$this.changingAmount = d;
-									$this.amountArr = [d,d,d,d];
-								}
-								$this.kaiduoRate1 = 1.00151
+								$this.kaiduoRate1 = 1.00151;
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 
+								if(kAmount<10*$this.originArr[1]){
+									$this.amountArr = $this.originArr;
+								}else{
+									var d = Math.floor(-delta/2)
+									if(d>10*$this.originArr[1]){
+										$this.amountArr = $this.originArr;
+										return;
+									}
+									$this.changingAmount = d;
+									console.log("update changingAmount:"+$this.changingAmount)
+									$this.amountArr = [d,d,d,d];
+								}	
 							}else{
 								//减少做多难度增加做空难度
 								$this.kaiduoRate1 = 1.003

@@ -782,7 +782,7 @@ return;
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
 							//if(Math.abs(delta)<=max*1/3){
-							if(Math.abs(delta)<=$this.originArr[1]*4){
+							if(Math.abs(delta)<=$this.originArr[1]*2){
 								$this.kaiduoRate1 = $this.origin;
 								$this.changingAmount = 0;//说明常态
 								$this.amountArr = $this.originArr;
@@ -793,15 +793,21 @@ return;
 
 
 							}else{
+								$this.kaiduoRate1 = 0.99852;
+								console.info("add kaiduorate:"+$this.kaiduoRate1)
+
 								if(dAmount<10*$this.originArr[1]){
 									$this.amountArr = $this.originArr;
 								}else{
-									var d = Math.floor(-delta/4)
+									var d = Math.floor(-delta/2)
+									if(d>10*$this.originArr[1]){
+										$this.amountArr = $this.originArr;
+										return;
+									}
 									$this.changingAmount = d;
 									console.log("update changingAmount:"+$this.changingAmount)
 									$this.amountArr = [d,d,d,d];
 								}
-								$this.kaiduoRate1 = 0.99852
 							}
 						}
 						
@@ -830,7 +836,7 @@ return;
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
 							//if(Math.abs(delta)<=max*1/3){
-							if(Math.abs(delta)<=$this.originArr[1]*4){
+							if(Math.abs(delta)<=$this.originArr[1]*2){
 								$this.kaiduoRate1 = $this.origin;
 								$this.changingAmount = 0;//说明常态
 								$this.amountArr = $this.originArr;
@@ -844,18 +850,25 @@ return;
 								
 
 							}else{
+								$this.kaiduoRate1 = 0.99852;
+								console.info("add kaiduorate:"+$this.kaiduoRate1)
+
 								if(dAmount<10*$this.originArr[1]){
 									$this.amountArr = $this.originArr;
 								}else{
-									var d = Math.floor(-delta/4)
+									var d = Math.floor(-delta/2)
+									if(d>10*$this.originArr[1]){
+										$this.amountArr = $this.originArr;
+										return;
+									}
 									$this.changingAmount = d;
 									console.log("update changingAmount:"+$this.changingAmount)
 									$this.amountArr = [d,d,d,d];
 								}
 
-								$this.kaiduoRate1 = 0.99852
 								
-								console.info("add kaiduorate:"+$this.kaiduoRate1)
+								
+								
 							}
 
 						}

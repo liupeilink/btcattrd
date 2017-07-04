@@ -1190,7 +1190,7 @@ return;
 			setInterval($this.ensureAllOrder,10000);
 
 			var cur = new Date().getTime();
-			var random = cur%10000*100
+			var random = cur%1000*1000
 			//0~999s
 			if(random<300000||random>600000){
 				random = 350000

@@ -800,7 +800,7 @@ return;
 									$this.amountArr = $this.originArr;
 								}else{
 									var d = Math.floor(-delta/2)
-									if(d>10*$this.originArr[1]){
+									if(d>10*$this.originArr[1] || $this.kAmount > 50*$this.originArr[1]){
 										$this.amountArr = $this.originArr;
 										return;
 									}
@@ -857,7 +857,7 @@ return;
 									$this.amountArr = $this.originArr;
 								}else{
 									var d = Math.floor(-delta/2)
-									if(d>10*$this.originArr[1]){
+									if(d>10*$this.originArr[1] || $this.kAmount > 50*$this.originArr[1]){
 										$this.amountArr = $this.originArr;
 										return;
 									}

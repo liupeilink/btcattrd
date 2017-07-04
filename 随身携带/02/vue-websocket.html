@@ -237,6 +237,7 @@ var app = new Vue({
 		//amountArr:[3,3,5,7],
 		//amountArr:[7,6,5,4],
 		amountArr:[9,8,7,5],
+		originArr:[9,8,7,5],
 		fazhi:[3000,2500,2000],
 		// amountArr:[3,3,3,3],
 		// fazhi:[3000,2750,2500],
@@ -778,6 +779,7 @@ return;
 							//if(Math.abs(delta)<=max*1/3){
 							if(Math.abs(delta)<=$this.amount*2){
 								$this.kaiduoRate1 = $this.origin;
+								$this.amountArr = $this.originArr;
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
 								
@@ -785,6 +787,8 @@ return;
 
 
 							}else{
+								var d = Math.floor(-delta/2)
+								$this.amountArr = [d,d,d,d];
 								$this.kaiduoRate1 = 0.99852
 							}
 						}
@@ -816,6 +820,7 @@ return;
 							//if(Math.abs(delta)<=max*1/3){
 							if(Math.abs(delta)<=$this.amount*2){
 								$this.kaiduoRate1 = $this.origin;
+								$this.amountArr = $this.originArr;
 								console.info("reset kaiduorate:"+$this.kaiduoRate1)
 							}else if(delta>0){
 								//持有多仓大于空仓，应减少做空难度，增加空仓数量
@@ -825,6 +830,8 @@ return;
 								
 
 							}else{
+								var d = Math.floor(-delta/2)
+								$this.amountArr = [d,d,d,d];
 								$this.kaiduoRate1 = 0.99852
 								
 								console.info("add kaiduorate:"+$this.kaiduoRate1)

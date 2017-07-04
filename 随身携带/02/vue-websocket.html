@@ -782,7 +782,7 @@ return;
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
 							//if(Math.abs(delta)<=max*1/3){
-							if(Math.abs(delta)<=$this.originArr[1]*2){
+							if(Math.abs(delta)<=$this.originArr[1]*4){
 								$this.kaiduoRate1 = $this.origin;
 								$this.changingAmount = 0;//说明常态
 								$this.amountArr = $this.originArr;
@@ -796,7 +796,7 @@ return;
 								if(dAmount<10*$this.originArr[1]){
 									$this.amountArr = $this.originArr;
 								}else{
-									var d = Math.floor(-delta/2)
+									var d = Math.floor(-delta/4)
 									$this.changingAmount = d;
 									console.log("update changingAmount:"+$this.changingAmount)
 									$this.amountArr = [d,d,d,d];
@@ -830,7 +830,7 @@ return;
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
 							//if(Math.abs(delta)<=max*1/3){
-							if(Math.abs(delta)<=$this.originArr[1]*2){
+							if(Math.abs(delta)<=$this.originArr[1]*4){
 								$this.kaiduoRate1 = $this.origin;
 								$this.changingAmount = 0;//说明常态
 								$this.amountArr = $this.originArr;
@@ -847,7 +847,7 @@ return;
 								if(dAmount<10*$this.originArr[1]){
 									$this.amountArr = $this.originArr;
 								}else{
-									var d = Math.floor(-delta/2)
+									var d = Math.floor(-delta/4)
 									$this.changingAmount = d;
 									console.log("update changingAmount:"+$this.changingAmount)
 									$this.amountArr = [d,d,d,d];

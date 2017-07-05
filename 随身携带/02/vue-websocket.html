@@ -800,9 +800,12 @@ return;
 									$this.amountArr = $this.originArr;
 								}else{*/
 									var d = Math.floor(-delta/2)
-									if(d>10*$this.originArr[1] || $this.kAmount > 50*$this.originArr[1]){
+									if($this.kAmount > 50*$this.originArr[1]){
 										$this.amountArr = $this.originArr;
 										return;
+									}
+									if(d>10*$this.originArr[1]){
+										d = 10*$this.originArr[1];
 									}
 									$this.changingAmount = d;
 									console.log("update changingAmount:"+$this.changingAmount)
@@ -857,9 +860,12 @@ return;
 									$this.amountArr = $this.originArr;
 								}else{*/
 									var d = Math.floor(-delta/2)
-									if(d>10*$this.originArr[1] || $this.kAmount > 50*$this.originArr[1]){
+									if($this.kAmount > 50*$this.originArr[1]){
 										$this.amountArr = $this.originArr;
 										return;
+									}
+									if(d>10*$this.originArr[1]){
+										d = 10*$this.originArr[1];
 									}
 									$this.changingAmount = d;
 									console.log("update changingAmount:"+$this.changingAmount)

@@ -745,6 +745,11 @@ return;
 								$this.kaiduoRate1 = 1.00151;
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 
+								if(dAmount>50*$this.originArr[1]){
+									$this.amountArr = $this.originArr;
+									return;
+								}
+
 								var d = Math.floor(delta/2)
 								if(d>10*$this.originArr[1]){
 									d = 2*$this.originArr[1];
@@ -798,6 +803,10 @@ return;
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 
 								var d = Math.floor(delta/2)
+								if(dAmount>50*$this.originArr[1]){
+									$this.amountArr = $this.originArr;
+									return;
+								}
 								if(d>10*$this.originArr[1]){
 									d = 2*$this.originArr[1];
 								}

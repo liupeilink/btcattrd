@@ -745,22 +745,18 @@ return;
 								$this.kaiduoRate1 = 1.00151;
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 
-								/*if(kAmount<10*$this.originArr[1]){
-									$this.amountArr = $this.originArr;
-								}else{*/
-									var d = Math.floor(delta/2)
-									if($this.dAmount > 50*$this.originArr[1]){
-										$this.amountArr = $this.originArr;
-										return;
-									}
-									if(d>10*$this.originArr[1]){
-										
-										d = 10*$this.originArr[1]
-									}
-									$this.changingAmount = d;
-									console.log("update changingAmount:"+$this.changingAmount)
-									$this.amountArr = [d,d,d,d];
-								//}								
+								var d = Math.floor(delta/2)
+								if(d>10*$this.originArr[1]){
+									d = 10*$this.originArr[1];
+								}
+								$this.changingAmount = d;
+
+								$this.amountArr = [d,d,d,d];
+
+								console.log("update changingAmount:"+$this.changingAmount)
+
+
+															
 
 							}else{
 								$this.kaiduoRate1 = 1.003
@@ -801,22 +797,15 @@ return;
 								$this.kaiduoRate1 = 1.00151;
 								console.info("add kaiduorate:"+$this.kaiduoRate1)
 
-								/*if(kAmount<10*$this.originArr[1]){
-									$this.amountArr = $this.originArr;
-								}else{*/
-									var d = Math.floor(delta/2)
-									if($this.dAmount > 50*$this.originArr[1]){
-										$this.amountArr = $this.originArr;
-										return;
-									}
-									if(d>10*$this.originArr[1]){
-										
-										d = 10*$this.originArr[1]
-									}
-									$this.changingAmount = d;
-									console.log("update changingAmount:"+$this.changingAmount)
-									$this.amountArr = [d,d,d,d];
-								//}	
+								var d = Math.floor(delta/2)
+								if(d>10*$this.originArr[1]){
+									d = 10*$this.originArr[1];
+								}
+								$this.changingAmount = d;
+
+								$this.amountArr = [d,d,d,d];
+
+								console.log("update changingAmount:"+$this.changingAmount)
 							}else{
 								//减少做多难度增加做空难度
 								$this.kaiduoRate1 = 1.003

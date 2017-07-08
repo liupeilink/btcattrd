@@ -564,6 +564,9 @@ return;
 								//if(order.amount!=$this.amount){
 								// 	continue;
 								// }
+								if(order.symbol=='ltc_usd'){
+									continue;
+								}
 								if(order.type==1||order.type==3){
 									continue;
 								}

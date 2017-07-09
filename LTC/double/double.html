@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>开多一阶5min</title>
+	<title>LTC</title>
 	<style>
 		th {background: #ccc;}
 		table td,table th{
@@ -30,6 +30,7 @@
 		<p v-if="ltcDirection=='k'">CloseShortRate: <span style="color:#33f">{{CloseShortRate}}</span></p>
 		<p v-if="ltcDirection=='d'">当前多仓止损rate是zhiduorate: <span style="color:red">{{zhiDuoRate}}</span></p>
 		<p v-if="ltcDirection=='k'">当前空仓止损rate是zhikongrate:<span style="color:red"> {{zhiKongRate}}</span></p>
+		<p>提示：{{someTips}}</p>
 		<br>
 		<p>hasLost: {{getHasLost()}}</p>	
 		<p>step: {{step}}(1.开仓成功。2，平单等待成交。3.发生了撤单，因为止损，已经撤单成功。4.平单完全成交（止盈单或者止损单）)</p>
@@ -79,7 +80,9 @@ var app = new Vue({
 		
 		okCoinWebSocket:{},
 
-
+		someTips:'',
+		zhisunTimer:'',
+		zhisunOrder:'',
 		tickerData:{},
 		tickerOrder:'',
 		curPlantOrder:'',
@@ -370,11 +373,15 @@ var app = new Vue({
 			}
 			var hasLost = parseFloat(window.localStorage.getItem("hasLost"));
 			if(hasLost>0){
-				var curTime = new Data().getTime();
+				var curTime = new Date().getTime();
 				$this.someTips = "虽然上次发生了止损，但是收益已经补回了前面所有损失，收益是："+hasLost+ ' ' +$this.formatDate(curTime) ;
 				return;
 			}
-			var destination = -hasLost*2;
+			var r = $this.ltcAmount/$this.originltcAmount;
+			var cancelTime = Math.log(r)*Math.LOG2E
+			var desRate = 2-Math.sqrt(cancelTime)/5
+
+			var destination = -hasLost*desRate;
 			var ltcAmount = $this.ltcAmount;
 			if($this.ltcDirection=='d'){
 				var duorate;
@@ -419,7 +426,7 @@ var app = new Vue({
 								}
 
 								
-								if($this.searchOrder($this.allOrder, order.order_id) == -1){
+								if($this.searchOrder($this.allOrder, order.order_id) == -1 && order.status!=2){
 									//只要有lostorder就加进allOrder，剩下的事情交给allorder去做
 									$this.addOrder($this.allOrder, order.order_id, order)
 								}
@@ -514,7 +521,33 @@ var app = new Vue({
 											$this.realzhisunAmount = order.deal_amount;
 											var lastAmount = $this.ltcAmount;
 											
-											$this.ltcAmount = $this.ltcAmount*2;
+											if($this.ltcAmount>=128*$this.originltcAmount){
+
+												$this.ltcAmount = $this.originltcAmount
+												
+												var l = window.localStorage.getItem("hasLost")
+												var hb;
+												if(window.localStorage.getItem("heartbreakLost")===null){
+													window.localStorage.setItem("heartbreakLost", l);
+												}else{
+													hb = window.localStorage.getItem("heartbreakLost")
+													hb = hb + ', ' + l;
+													window.localStorage.setItem("heartbreakLost", hb)
+												}
+												
+												window.localStorage.setItem("hasLost",'0');
+												window.localStorage.setItem("zhiDuoRate",String($this.originzhiduorate))
+												$this.zhiDuoRate = $this.originzhiduorate;
+												window.localStorage.setItem("zhiKongRate",String($this.originzhikongrate))
+												$this.zhiKongRate = $this.originzhikongrate;
+												window.localStorage.setItem("CloseShortRate",String($this.originshortrate))
+												$this.CloseShortRate = $this.originshortrate;
+												window.localStorage.setItem("CloseLongRate",String($this.originlongrate))
+												$this.CloseLongRate = $this.originlongrate;
+											}else{
+												$this.ltcAmount = $this.ltcAmount*2;
+											}
+											
 											window.localStorage.setItem("ltcAmount",String($this.ltcAmount))
 											
 											order.type==3 ? $this.ltcDirection = 'k' : $this.ltcDirection = 'd'; 
@@ -574,10 +607,7 @@ var app = new Vue({
 									}
 								}
 
-								if((order.type==1||order.type==2)&&(order.status==1||order.status==2||order.status==0)){
-									
-									
-								}
+								
 								
 /*
 								if(order.status==2){
@@ -645,7 +675,13 @@ var app = new Vue({
 					else if(msg['channel']=="ok_futureusd_trade"){
 
 						if(msg['data'].result&&msg['data'].result!='false'){
+							if($this.zhisunTimer!==''){
+								clearInterval($this.zhisunTimer);
+								$this.zhisunTimer = '';
+							}
 							
+							$this.zhisunOrder = '';
+
 							var time = new Date().getTime()
 							$this.receiveTime = time;
 							var order = {
@@ -655,6 +691,14 @@ var app = new Vue({
 
 							$this.allOrder.push(order);
 							//$this.proxyingArr.push(order);
+							
+						}else{
+							if($this.zhisunOrder!==''){
+								var o = $this.zhisunOrder;
+								$this.zhisunTimer = setInterval(function(){
+									$this.futureTrade(o.price, o.type, o.amount);
+								},150);
+							}
 							
 						}
 					}else if(msg['channel']=='ok_futureusd_cancel_order'){
@@ -687,10 +731,25 @@ var app = new Vue({
 								//刷新后没有这个price
 								$this.remain = parseFloat(window.localStorage.getItem("remain"));
 							}
+
+							var r = $this.remain;
+							var t = type;
+							var p = $this.StopPrice*rate;
+							var zhisunOrder = {
+								type: t,
+								amount: r,
+								price: p
+							};
+							$this.zhisunOrder = zhisunOrder;
+
 							//下面下的单一定成交
-							console.info("下止损单前的平仓量remain： "+$this.remain)
+							console.info("下止损单前的平仓量remain： "+$this.remain+", type: "+type)
 							$this.futureTrade($this.StopPrice*rate,type,$this.remain);
 							console.info("发出了止损单指令")
+
+
+
+
 							$this.zaiCancelZhongXialeZhisun = true;
 							//$this.stop = false;
 							

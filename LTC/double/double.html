@@ -571,7 +571,7 @@ var app = new Vue({
 									$this.newestOrderTime = order.create_date;
 									window.localStorage.setItem("newestOrderTime",String(order.create_date))
 									if(order.create_date>t){
-										console.info("................是大于...............设置了新的 newestOrderTime和oneorder ")
+										console.info("................是大于...............设置了新的 newestOrderTime和oneorder order.type: "+order.type+", order.status: "+order.status+", create_date: "+order.create_date)
 									}
 									
 									$this.oneOrder = order;

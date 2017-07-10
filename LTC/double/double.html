@@ -216,7 +216,7 @@ var app = new Vue({
 				window.localStorage.setItem("newestOrderTime",String(order.create_date))
 				return true;
 			}else if($this.newestOrderTime>order.create_date){
-				console.info("这个order.create_date < newestOrderTime，不能把它赋给oneOrder，此订单时间是："+$this.formatDate(order.create_date)+"而原订单时间是："+$this.formatDate($this.newestOrderTime))
+				console.info("这个order.create_date < newestOrderTime，不能把它赋给oneOrder，此订单时间是："+order.create_date+"而原订单时间是："+$this.newestOrderTime)
 				return false;
 			}else{
 				console.info("指定了新的oneorder,新的时间是："+$this.formatDate(order.create_date)+"旧的时间："+$this.formatDate($this.oneOrder.create_date))

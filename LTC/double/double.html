@@ -559,22 +559,19 @@ var app = new Vue({
 								if(t==''){
 									$this.newestOrderTime = order.create_date;
 									window.localStorage.setItem("newestOrderTime",String(order.create_date))
-									console.info("...............................设置了新的 newestOrderTime和oneorder ")
+									console.info("...............是空................设置了新的 newestOrderTime和oneorder ")
 
 									$this.oneOrder = order;
 
 								}else if(order.create_date<t){
 									console.info("不是最新的订单,continue");
 									continue;
-								}else{
-									if(order.create_date==t){
-										console.info("...............................这个equal最新的订单 ")
-									}
-
+								}else if(order.create_date<t){
+									
 									$this.newestOrderTime = order.create_date;
 									window.localStorage.setItem("newestOrderTime",String(order.create_date))
 									if(order.create_date>t){
-										console.info("...............................设置了新的 newestOrderTime和oneorder ")
+										console.info("................是大于...............设置了新的 newestOrderTime和oneorder ")
 									}
 									
 									$this.oneOrder = order;
@@ -582,7 +579,7 @@ var app = new Vue({
 								
 								if($this.oneOrder==''){
 
-									console.info("如果你看到这句话，就见鬼了")
+									console.info("如果你看到这句话，也没什么")
 									
 									/*var result = $this.pointOneOrder(order);
 									if(result===false){

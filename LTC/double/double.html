@@ -566,7 +566,7 @@ var app = new Vue({
 								}else if(order.create_date<t){
 									console.info("不是最新的订单,continue");
 									continue;
-								}else if(order.create_date<t){
+								}else if(order.create_date>t){
 									
 									$this.newestOrderTime = order.create_date;
 									window.localStorage.setItem("newestOrderTime",String(order.create_date))

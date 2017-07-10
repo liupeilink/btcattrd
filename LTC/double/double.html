@@ -210,17 +210,20 @@ var app = new Vue({
 		pointOneOrder: function(order){
 			var $this = this;
 			if($this.newestOrderTime===''){
+				console.info("指定了新的oneorder,新的时间是："+$this.formatDate(order.create_date)+"旧的时间：空")
 				$this.oneOrder = order;
 				$this.newestOrderTime = order.create_date;
 				window.localStorage.setItem("newestOrderTime",String(order.create_date))
 				return true;
 			}else if($this.newestOrderTime>order.create_date){
-				console.info("这个order.create_date < newestOrderTime，不能把它赋给oneOrder")
+				console.info("这个order.create_date < newestOrderTime，不能把它赋给oneOrder，此订单时间是："+$this.formatDate(order.create_date)+"而原订单时间是："+$this.formatDate($this.newestOrderTime))
 				return false;
 			}else{
+				console.info("指定了新的oneorder,新的时间是："+$this.formatDate(order.create_date)+"旧的时间："+$this.formatDate($this.oneOrder.create_date))
 				$this.oneOrder = order;
 				$this.newestOrderTime = order.create_date;
 				window.localStorage.setItem("newestOrderTime",String(order.create_date))
+
 				return true;
 			}
 		},

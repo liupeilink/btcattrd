@@ -631,7 +631,7 @@ var app = new Vue({
 											continue;
 										}
 										$this.step = 1;
-										console.log("step: 1, 开单全成交了，那必须啊，价格高嘛，将要算算平仓的费率，算完去下平单，咱可不能赔钱啊")
+										console.log("step: 1, 开单全成交了，将要算算平仓的费率，算完去下平单,有时候开单没有设置新newestordertime的日志，尤其是刚下完止损单的时候，我打印一下开单的人权做个比较，order.create_date: "+order.create_date)
 										$this.computeShouldRate(order.price_avg);
 
 										//...................................handle ls
@@ -711,7 +711,7 @@ var app = new Vue({
 										if($this.step == 1 || $this.step == 2 || $this.step == 3){
 
 										}else{
-											console.info("全部成交的平单说：step只有2或3或者1才能置为4，continue; 当前step是："+$this.step+"不要惊讶，1也可以，因为刚下完开单下平单就成交了，还没来得及变成2,是好的")
+											console.info("全部成交的平单说：step只有2或3或者1才能置为4，当前step是："+$this.step+",continue;")
 											
 											continue;
 										}
@@ -1123,7 +1123,7 @@ var app = new Vue({
 
 
 			if($this.step != 2){
-				console.info("撤单函数说：只有step=2的时候才让撤,别撤了，当前step是："+$this.step);
+				//console.info("撤单函数说：只有step=2的时候才让撤,别撤了，当前step是："+$this.step);
 				return;
 			}
 			if($this.cancelSuc===false){

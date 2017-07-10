@@ -21,7 +21,19 @@
 		<button @click="start">启动</button>
 		<button @click="futureTrade(1000,1,1)">下单</button>
 		<button @click="futureCancelOrder(6465769535)">撤xxx</button>
-
+		<br>
+		<input v-model="inpStep" type="text"> <button @click="setStep()">重设step</button>
+		
+		<p>oneOrder</p>
+		<table id="processing">
+			<tr>
+				<th>订单号</th><th>下单成功时间</th>
+			</tr>
+			<tr>
+				<td>{{oneOrder['order_id']}}</td>				
+				<td>{{formatDate(oneOrder.create_date)}}</td>
+			</tr>		
+		</table>
 
 		{{receiveTime - sendTime}}
 		<p>direction: {{ltcDirection}}</p>
@@ -30,17 +42,22 @@
 		<p v-if="ltcDirection=='k'">CloseShortRate: <span style="color:#33f">{{CloseShortRate}}</span></p>
 		<p v-if="ltcDirection=='d'">当前多仓止损rate是zhiduorate: <span style="color:red">{{zhiDuoRate}}</span></p>
 		<p v-if="ltcDirection=='k'">当前空仓止损rate是zhikongrate:<span style="color:red"> {{zhiKongRate}}</span></p>
+		<br>
+		<p>平单委托价格curPlantOrder.price:<span style="color:#33f"> {{curPlantOrder.price}}</span></p>
+		<p>平单止损价格StopPrice:<span style="color:red"> {{StopPrice}}</span></p>
 		<p>提示：{{someTips}}</p>
 		<p>提示：{{someTips2}}</p>
 		<br>
 		<p>hasLost: {{getHasLost()}}</p>	
 		<p>step: {{step}}(1.开仓成功。2，平单等待成交。3.发生了撤单，因为止损，已经撤单成功。4.平单完全成交（止盈单或者止损单）)</p>
 		<br>
-		<p>ltcAmount: {{ltcAmount}}</p>
+		<p>ltcAmount: {{ltcAmount}}</p>,当前止损次数{{calCancelTimes()}}
 		<p>originltcAmount: {{originltcAmount}}</p>
 		<br>
-		<p>平单委托价格curPlantOrder.price: {{curPlantOrder.price}}</p>
-		<p>平单止损价格StopPrice: {{StopPrice}}</p>
+		<p>启动后最大止损次数{{maxC}}<p>
+		<p>设定的止损limit：{{limit}}</p>
+		<br>
+		
 	<!-- 	<p>curPlantOrder.order_id: {{curPlantOrder.order_id}}</p> -->
 		<p>平单创建日期curPlantOrder.create_date: {{formatDate(curPlantOrder.create_date)}}</p>
 		
@@ -71,6 +88,8 @@ var app = new Vue({
 		
 		okCoinWebSocket:{},
 
+		inpStep:'',
+		limit:7,
 		oneOrder:'',
 		destination:'',
 		someTips:'',
@@ -85,8 +104,8 @@ var app = new Vue({
 		ltcDirection:"d",// "d"&"k"
 		curltcSell:'',
 		curltcBuy:'',
-		ltcAmount:4,
-		originltcAmount:4,
+		ltcAmount:10,
+		originltcAmount:10,
 		stop:false,
 		CloseLongRate: 1.002,
 		originlongrate: 1.002,
@@ -108,6 +127,8 @@ var app = new Vue({
 		stopD:'',
 		stopK:'',
 		canceling:'',
+
+		maxC: 0,
 		
 
 
@@ -185,6 +206,34 @@ var app = new Vue({
 
 
 	methods: {
+		setStep: function(){
+			var $this = this;
+
+			$this.step = parseInt($this.inpStep);
+			console.info("你手动修改了当前step为...."+$this.step)
+		},
+		cal: function(limit){
+			var $this = this;
+
+			var once = 1;
+
+			for(var i=0; i<limit; i++){
+				once = once * 2;
+			}
+
+			return once;
+
+		},
+		calCancelTimes: function(){
+			var $this = this;
+			var r = $this.ltcAmount/$this.originltcAmount;
+			var cancelTime = Math.log(r)*Math.LOG2E
+
+			if(cancelTime>$this.maxC){
+				$this.maxC = cancelTime;
+			}
+			return cancelTime;
+		},
 		notifySTOP:function(dir){
 			var $this = this;
 			if(dir=='d'){
@@ -207,6 +256,10 @@ var app = new Vue({
 			var data = $this.tickerData;
 
 			if($this.tickerOrder==''&&$this.ltcBond==0&&$this.step==0){
+				if($this.step!=0){
+					console.info("tradeLTC说：我的天呐，这你也能进来？step: "+$this.step);
+					return;
+				}
 				$this.step = 0.5
 				console.log("step: 0.5, 将要去开仓，一切都是刚刚开始")
 			}else{
@@ -423,7 +476,7 @@ var app = new Vue({
 				duorate = 10*ltcAmount/(10*ltcAmount - price_avg*destination );
 				$this.CloseLongRate = duorate;
 				window.localStorage.setItem("CloseLongRate",String(duorate))
-				$this.zhiDuoRate = 1-(duorate-1);
+				$this.zhiDuoRate = (1-(duorate-1))*0.9991;
 				window.localStorage.setItem("zhiDuoRate",String($this.zhiDuoRate))
 
 
@@ -434,7 +487,7 @@ var app = new Vue({
 				kongrate = 10*ltcAmount/(10*ltcAmount + price_avg*destination );
 				$this.CloseShortRate = kongrate;
 				window.localStorage.setItem("CloseShortRate",String(kongrate))
-				$this.zhiKongRate = 1-kongrate+1;
+				$this.zhiKongRate = (1-kongrate+1)*1.0009;
 				window.localStorage.setItem("zhiKongRate",String($this.zhiKongRate))
 			}
 
@@ -450,11 +503,14 @@ var app = new Vue({
 				if(msg){
 
 					if(msg['channel']=="ok_futureusd_orderinfo"){
+						//console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
 						//console.info("okinfo come in")
 						if(msg['data'].result&&msg['data'].result!='false'){
 							for(var i=0; i<msg['data'].orders.length; i++){
 								var order = msg['data'].orders[i];
 								
+
+
 								if(order.symbol == 'btc_usd'){
 									continue;
 								}
@@ -467,10 +523,25 @@ var app = new Vue({
 									console.info("已经撤销的单你进来干啥 type,amount:"+order.type+' '+order.amount)
 								}
 								
-								
+								if($this.oneOrder==''){
+									$this.oneOrder = order;
+									console.info("由于某些缘故,系统发生了重启,onorder是空,我将查到的未成交订单赋给oneorder，未完成status包括[0,1...]好像就这俩吧")
+								}
 
 								//开单处理 特性：一次性成交
 								if(order.type==1 || order.type==2){
+
+									if($this.step != 0.5 && $this.step != 1){
+										console.info("2 orderinfo msg 开单完全成交时说： step不是0.5！你是怎么进来的，oneOrder是：id:"+$this.oneOrder.order_id+"typeof:"+(typeof $this.oneOrder)+"当前step是："+$this.step)
+										if($this.step == 2){
+											if($this.curPlantOrder != ''){
+												$this.oneOrder = $this.curPlantOrder;
+												console.info("既然step是2，我已经把oneorder重设成了当前的curplantorder")
+											}
+										}
+										
+									}
+
 									if($this.tickerOrder==''){
 										$this.tickerOrder = order;
 										
@@ -483,6 +554,11 @@ var app = new Vue({
 									if(order.status == 2){
 										$this.kaiPrice = order.price_avg;
 										window.localStorage.setItem("kaiPrice", String(order.price_avg))
+
+										if($this.step != 0.5 && $this.step != 1){
+											console.info("orderinfo msg 开单完全成交时说： step不是0.5也不是1 ！，还不能进行下一步，当前step是："+$this.step)
+											continue;
+										}
 										$this.step = 1;
 										console.log("step: 1, 开单全成交了，那必须啊，价格高嘛，将要算算平仓的费率，算完去下平单，咱可不能赔钱啊")
 										$this.computeShouldRate(order.price_avg);
@@ -541,8 +617,15 @@ var app = new Vue({
 									
 
 									if(order.status==0 || order.status==1){
+
+										if($this.step !== 1 && $this.step !== 3 && $this.step !== 2){
+											console.info("尚未全部成交的平单说：step不是1或3或2，无法置为2，当前step是："+$this.step)
+											continue;
+
+										}
 										$this.step = 2;
-										console.log("step: 2, 呵呵，平单挂上了，等着成交呢，会不会破止损价呢，还是....？？顺便order.status:"+order.status);
+										console.log("step: 2, 呵呵，平单挂上了，等着成交呢，会不会破止损价呢，还是....？？order.status:"+order.status+"如果从第3步来到这里也不用惊讶，毕竟止损单也是平单啊！如果oneOrder遍历速度和网速超级快的话是有这种可能的");
+
 									}
 									if(order.status==1||order.status==0){
 										$this.remain = order.amount-order.deal_amount;
@@ -550,11 +633,11 @@ var app = new Vue({
 									}
 									if(order.status==2){
 
-										if($this.step == 2 || $this.step == 3){
+										if($this.step == 1 || $this.step == 2 || $this.step == 3){
 
 										}else{
-											console.info("我知道出问题了，但是不知道哪的问题，所以这条路你先别走了，continue")
-											console.log("BYE BYE ! ! order.gundan: "+order.gundan+", order.amount: "+order.amount+", order.type: "+order.type+", order.create_date: "+$this.formatDate(order.create_date));
+											console.info("全部成交的平单说：step只有2或3或者1才能置为4，continue; 当前step是："+$this.step+"不要惊讶，1也可以，因为刚下完开单下平单就成交了，还没来得及变成2,是好的")
+											
 											continue;
 										}
 										$this.step = 4;
@@ -571,8 +654,10 @@ var app = new Vue({
 
 											$this.realzhisunAmount = order.deal_amount;
 											var lastAmount = $this.ltcAmount;
+
+											var once = $this.cal($this.limit);
 											
-											if($this.ltcAmount>=512*$this.originltcAmount){
+											if($this.ltcAmount>=once*$this.originltcAmount){
 
 												$this.ltcAmount = $this.originltcAmount
 												
@@ -749,7 +834,7 @@ var app = new Vue({
 							$this.receiveTime = time;
 							var order = {
 								order_id: msg['data'].order_id,
-								order_time: time
+								create_date: time
 							}
 
 							//$this.allOrder.push(order);
@@ -954,7 +1039,12 @@ var app = new Vue({
 		
 		retreat: function(){
 			var $this = this;
-			
+
+
+			if($this.step != 2){
+				console.info("撤单函数说：只有step=2的时候才让撤,别撤了，当前step是："+$this.step);
+				return;
+			}
 			if($this.cancelSuc===false){
 				$this.futureCancelOrder($this.curPlantOrder.order_id);
 			}

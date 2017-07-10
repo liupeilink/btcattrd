@@ -88,6 +88,7 @@ var app = new Vue({
 		
 		okCoinWebSocket:{},
 
+		newestOrderTime:'',
 		inpStep:'',
 		limit:7,
 		oneOrder:'',
@@ -206,6 +207,31 @@ var app = new Vue({
 
 
 	methods: {
+		pointOneOrder: function(order){
+			var $this = this;
+			if($this.newestOrderTime===''){
+				$this.oneOrder = order;
+				$this.newestOrderTime = order.create_date;
+				window.localStorage.setItem("newestOrderTime",String(order.create_date))
+				return true;
+			}else if($this.newestOrderTime>order.create_date){
+				console.info("这个order.create_date < newestOrderTime，不能把它赋给oneOrder")
+				return false;
+			}else{
+				$this.oneOrder = order;
+				$this.newestOrderTime = order.create_date;
+				window.localStorage.setItem("newestOrderTime",String(order.create_date))
+				return true;
+			}
+		},
+		confirmOneOrder: function(order){
+			var $this = this;
+			if(order.create_date<$this.newestOrderTime){
+				return false;
+			}else{
+
+			}
+		},
 		setStep: function(){
 			var $this = this;
 
@@ -411,6 +437,7 @@ var app = new Vue({
 			}
 
 			if($this.ltcDirection=='d'){
+
 				pingprice = parseFloat((kaiprice * $this.CloseLongRate).toFixed(3));
 				var usd1 = (pingprice - kaiprice)*(amount-remain)*10/kaiprice;//正数
 				var usd2 = (zsprice-kaiprice)*(remain*10)/kaiprice;//负数
@@ -459,6 +486,8 @@ var app = new Vue({
 			var hasLost = parseFloat(window.localStorage.getItem("hasLost"));
 			if(hasLost>0){
 				var curTime = new Date().getTime();
+				
+				//debug 20:26:26
 				$this.someTips = "虽然上次发生了止损，但是收益已经补回了前面所有损失，收益是："+hasLost+ ' ' +$this.formatDate(curTime) ;
 				$this.init();
 				return;
@@ -524,8 +553,15 @@ var app = new Vue({
 								}
 								
 								if($this.oneOrder==''){
-									$this.oneOrder = order;
-									console.info("由于某些缘故,系统发生了重启,onorder是空,我将查到的未成交订单赋给oneorder，未完成status包括[0,1...]好像就这俩吧")
+									
+									var result = $this.pointOneOrder(order);
+									if(result===false){
+										console.info("虽然可能重启了，但是我还是不能把此订单给oneorder，因为它不是最新的订单")
+										continue;
+									}else if(result===true){
+										console.info("由于某些缘故,系统发生了重启,onorder是空,我将查到的未成交订单赋给oneorder，未完成status包括[0,1...]好像就这俩吧")
+									}
+									
 								}
 
 								//开单处理 特性：一次性成交
@@ -535,8 +571,13 @@ var app = new Vue({
 										console.info("2 orderinfo msg 开单完全成交时说： step不是0.5！你是怎么进来的，oneOrder是：id:"+$this.oneOrder.order_id+"typeof:"+(typeof $this.oneOrder)+"当前step是："+$this.step)
 										if($this.step == 2){
 											if($this.curPlantOrder != ''){
-												$this.oneOrder = $this.curPlantOrder;
-												console.info("既然step是2，我已经把oneorder重设成了当前的curplantorder")
+
+												if($this.pointOneOrder($this.curPlantOrder)){
+													console.info("既然step是2，我已经把oneorder重设成了当前的curplantorder")
+												}else{
+													console.info("curPlantOrder不能给oneorder，因为他不是最新的订单")
+												}
+												
 											}
 										}
 										
@@ -564,22 +605,22 @@ var app = new Vue({
 										$this.computeShouldRate(order.price_avg);
 
 										//...................................handle ls
-										var lsCloseLongRate = window.localStorage.getItem("CloseLongRate")
+										/*var lsCloseLongRate = window.localStorage.getItem("CloseLongRate")
 										var lsCloseShortRate = window.localStorage.getItem("CloseShortRate")
 										var lszhiDuoRate = window.localStorage.getItem("zhiDuoRate")
 										var lszhiKongRate = window.localStorage.getItem("zhiKongRate")
-										if(lsCloseLongRate!==null && parseFloat(lsCloseLongRate)!==$this.originlongrate){
+										if(lsCloseLongRate!==null && parseFloat(lsCloseLongRate)!=$this.originlongrate){
 											$this.CloseLongRate = parseFloat(lsCloseLongRate);
 										}
-										if(lsCloseShortRate!==null && parseFloat(lsCloseShortRate)!==$this.originshortrate){
+										if(lsCloseShortRate!==null && parseFloat(lsCloseShortRate)!=$this.originshortrate){
 											$this.CloseShortRate = parseFloat(lsCloseShortRate);
 										}
-										if(lszhiDuoRate!==null && parseFloat(lszhiDuoRate)!==$this.originzhiduorate){
+										if(lszhiDuoRate!==null && parseFloat(lszhiDuoRate)!=$this.originzhiduorate){
 											$this.zhiDuoRate = parseFloat(lszhiDuoRate);
 										}
-										if(lszhiKongRate!==null && parseFloat(lszhiKongRate)!==$this.originzhikongrate){
+										if(lszhiKongRate!==null && parseFloat(lszhiKongRate)!=$this.originzhikongrate){
 											$this.zhiKongRate = parseFloat(lszhiKongRate);
-										}
+										}*/
 										//handle ls over................................
 
 
@@ -685,6 +726,8 @@ var app = new Vue({
 												if(parseFloat(window.localStorage.getItem("hasLost"))>=0){
 													$this.ltcAmount = $this.originltcAmount;
 													var curTime = new Date().getTime();
+
+													//debug 20:26:24
 													$this.someTips2 = "收益>=0："+hasLost+ ' ' +$this.formatDate(curTime) +',不再增加amount以减小风险,';
 												}else{
 													$this.ltcAmount = $this.ltcAmount*2;
@@ -839,8 +882,10 @@ var app = new Vue({
 
 							//$this.allOrder.push(order);
 							//$this.proxyingArr.push(order);
-							$this.oneOrder = order;
-							console.info("the only current order is: type: " + order.type + ", amount: "+order.amount)
+
+							$this.pointOneOrder(order);
+							
+
 							
 						}else{
 							if($this.zhisunOrder!==''){
@@ -1274,6 +1319,9 @@ var app = new Vue({
 			}
 			if(ls.getItem('saveRemain')!==null){
 				$this.saveRemain = parseFloat(ls['saveRemain']);
+			}
+			if(ls.getItem('newestOrderTime')!==null){
+				$this.newestOrderTime = parseInt(ls['newestOrderTime']);
 			}
 			
 		}

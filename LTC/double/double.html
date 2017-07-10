@@ -554,16 +554,45 @@ var app = new Vue({
 								if(order.status==-1){
 									console.info("已经撤销的单你进来干啥 type,amount:"+order.type+' '+order.amount)
 								}
+
+								var t = $this.newestOrderTime;
+								if(t==''){
+									$this.newestOrderTime = order.create_date;
+									window.localStorage.setItem("newestOrderTime",String(order.create_date))
+									console.info("...............................设置了新的 newestOrderTime和oneorder ")
+
+									$this.oneOrder = order;
+
+								}else if(order.create_date<t){
+									console.info("不是最新的订单,continue");
+									continue;
+								}else{
+									if(order.create_date==t){
+										console.info("...............................这个equal最新的订单 ")
+									}
+
+									$this.newestOrderTime = order.create_date;
+									window.localStorage.setItem("newestOrderTime",String(order.create_date))
+									if(order.create_date>t){
+										console.info("...............................设置了新的 newestOrderTime和oneorder ")
+									}
+									
+									$this.oneOrder = order;
+								}
 								
 								if($this.oneOrder==''){
+
+									console.info("如果你看到这句话，就见鬼了")
 									
-									var result = $this.pointOneOrder(order);
+									/*var result = $this.pointOneOrder(order);
 									if(result===false){
 										console.info("虽然可能重启了，但是我还是不能把此订单给oneorder，因为它不是最新的订单")
 										continue;
 									}else if(result===true){
 										console.info("由于某些缘故,系统发生了重启,onorder是空,我将查到的未成交订单赋给oneorder，未完成status包括[0,1...]好像就这俩吧")
-									}
+									}*/
+									$this.oneOrder = order;
+									console.info("由于某些缘故,系统发生了重启,onorder是空,我将查到的未成交订单赋给oneorder，未完成status包括[0,1...]好像就这俩吧")
 									
 								}
 
@@ -575,11 +604,12 @@ var app = new Vue({
 										if($this.step == 2){
 											if($this.curPlantOrder != ''){
 
-												if($this.pointOneOrder($this.curPlantOrder)){
+												/*if($this.pointOneOrder($this.curPlantOrder)){
 													console.info("既然step是2，我已经把oneorder重设成了当前的curplantorder")
 												}else{
 													console.info("curPlantOrder不能给oneorder，因为他不是最新的订单")
-												}
+												}*/
+												$this.oneOrder = $this.curPlantOrder;
 												
 											}
 										}
@@ -654,6 +684,10 @@ var app = new Vue({
 											$this.curPlantOrder = order;
 										}
 									}
+
+
+									
+
 									if($this.StopPrice===''){
 										//刷新后没有这个price
 										$this.StopPrice = parseFloat(window.localStorage.getItem("StopPrice"));
@@ -886,7 +920,9 @@ var app = new Vue({
 							//$this.allOrder.push(order);
 							//$this.proxyingArr.push(order);
 
-							$this.pointOneOrder(order);
+							//尝试着不在这里指定
+							//$this.pointOneOrder(order);
+							$this.oneOrder = order;
 							
 
 							

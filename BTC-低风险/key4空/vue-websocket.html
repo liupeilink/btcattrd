@@ -238,9 +238,9 @@ var app = new Vue({
 		// recCount:0
 
 		//amountArr:[5,3,3,2],
-		amountArr:[7,6,5,4],
+		amountArr:[6,5,4,3],
 		//amountArr:[9,8,6,5],
-		originArr:[7,6,5,4],
+		originArr:[6,5,4,3],
 		fazhi:[3000,2500,2000],
 		// amountArr:[3,3,3,3],
 		// fazhi:[3000,2750,2500],
@@ -738,10 +738,10 @@ return;
 							}
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
-							if(Math.abs(delta)<=$this.originArr[1]*4){
+							if(Math.abs(delta)<=$this.amount*2){
 								$this.changingAmount = 0;
 							//if(Math.abs(delta)<=max*1/3){
-								$this.amountArr = $this.originArr;
+								//$this.amountArr = $this.originArr;
 								$this.kaiduoRate1 = $this.origin;
 							}else if(delta>0){
 								
@@ -792,10 +792,10 @@ return;
 							}
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
-							if(Math.abs(delta)<=$this.originArr[1]*4){
+							if(Math.abs(delta)<=$this.amount*2){
 								$this.changingAmount = 0;
 							//if(Math.abs(delta)<=max*1/3){
-								$this.amountArr = $this.originArr;
+								//$this.amountArr = $this.originArr;
 								$this.kaiduoRate1 = $this.origin;
 								console.info("reset kaiduorate:"+$this.kaiduoRate1)
 							}else if(delta>0){

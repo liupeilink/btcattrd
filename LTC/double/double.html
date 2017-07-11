@@ -510,14 +510,14 @@ var app = new Vue({
 				duorate = 10*ltcAmount/(10*ltcAmount - price_avg*destination );
 				$this.CloseLongRate = duorate;
 				window.localStorage.setItem("CloseLongRate",String(duorate))
-				/*if(duorate<1.002){
+				if(duorate<1.002){
 					$this.zhiDuoRate = 0.998*0.9991;
 					console.info("duorate太小了，这样的话止损率不能太小，否则触发止损过于容易，产生震荡崩塌")
 				}else{
 					$this.zhiDuoRate = (1-(duorate-1))*0.9991;
-				}*/
+				}
 				//震荡应该是由于推送的price不准确导致的
-				$this.zhiDuoRate = (1-(duorate-1))*0.9991;
+				
 				
 				window.localStorage.setItem("zhiDuoRate",String($this.zhiDuoRate))
 				console.info("computeShouldRate: 止盈率,止损率:"+$this.CloseLongRate+', '+$this.zhiDuoRate)
@@ -530,14 +530,14 @@ var app = new Vue({
 				kongrate = 10*ltcAmount/(10*ltcAmount + price_avg*destination );
 				$this.CloseShortRate = kongrate;
 				window.localStorage.setItem("CloseShortRate",String(kongrate))
-				/*if(kongrate>0.998){
+				if(kongrate>0.998){
 					$this.zhiKongRate = 1.002*1.0009;
 					console.info("kongrate太小(大)了，这样的话止损率不能太小，否则触发止损过于容易，产生震荡崩塌")
 				}else{
 					$this.zhiKongRate = (1-kongrate+1)*1.0009;
-				}*/
+				}
 				//震荡应该是由于推送的price不准确导致的
-				$this.zhiKongRate = (1-kongrate+1)*1.0009;
+				
 
 				window.localStorage.setItem("zhiKongRate",String($this.zhiKongRate))
 				console.info("computeShouldRate: 止盈率,止损率:"+$this.CloseShortRate+', '+$this.zhiKongRate)

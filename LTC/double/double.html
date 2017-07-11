@@ -1379,9 +1379,6 @@ var app = new Vue({
 					return;
 				}
 				if($this.ltcDirection=='d'){
-
-
-					if(time < $this.oneOrder.create_date)
 					if(price<=$this.StopPrice && $this.step==2 && time>order.create_date){
 						//撤单//止损//下新单
 		

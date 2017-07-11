@@ -88,6 +88,7 @@ var app = new Vue({
 		
 		okCoinWebSocket:{},
 
+		receiveNotify: false,
 		tp: '',
 		newestOrderTime:'',
 		inpStep:'',
@@ -736,6 +737,11 @@ var app = new Vue({
 											continue;
 										}
 										$this.step = 4;
+
+										//我觉得用在这里是合适的，notify是为了通知止损，而且只有step=2才能通知，现在step都是4了，反正他通知一次就足够了,撤单成不成功跟他没关系，他通知到了就ok
+										$this.receiveNotify = false;
+										//
+
 										console.log("step: 4, 卧槽牛逼，平单全成交了，我来看看是止盈单还是止损单吧...");
 
 
@@ -1130,16 +1136,21 @@ var app = new Vue({
 			}
 			if($this.cancelSuc===false){
 				$this.futureCancelOrder($this.curPlantOrder.order_id);
+				$this.canceling = true;
 			}
 
 			if($this.canceling===true){
 				return;
 			}
 			if($this.stopD===true){
+				//检测到了，就反馈给justify，好让他别true true true的了一次就够了
+				$this.receiveNotify = true;
 				$this.futureCancelOrder($this.curPlantOrder.order_id);
 				$this.canceling = true;
 			}
 			if($this.stopK===true){
+				//检测到了，就反馈给justify，好让他别true true true的了一次就够了
+				$this.receiveNotify = true;
 				$this.futureCancelOrder($this.curPlantOrder.order_id);
 				$this.canceling = true;
 			}
@@ -1381,6 +1392,12 @@ var app = new Vue({
 				if($this.ltcDirection=='d'){
 					if(price<=$this.StopPrice && $this.step==2 && time>order.create_date){
 						//撤单//止损//下新单
+
+
+						if($this.receiveNotify===true){
+							console.log("他已经收到了，别通知了，等他处理完会告诉你")
+							return;
+						}
 		
 						console.info("达成止损条件，市场成交价："+price+"击穿了stopPrice："+$this.StopPrice)
 
@@ -1392,9 +1409,15 @@ var app = new Vue({
 				}else if($this.ltcDirection=='k'){
 					if(price>=$this.StopPrice && $this.step==2 && time>order.create_date){
 
+						if($this.receiveNotify===true){
+							console.log("他已经收到了，别通知了，等他处理完会告诉你")
+							return;
+						}
+
 						console.info("达成止损条件，市场成交价："+price+"击穿了stopPrice："+$this.StopPrice)
 						
 						$this.notifySTOP("k");
+
 						
 
 						$this.stop = true;

@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<!-- //md5加密 按字母顺序，secretkey放在最后 -->
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>BTC</title>
+	<style>
+		th {background: #ccc;}
+		table td,table th{
+			font-size:14px;
+			font-weight: 400;
+			text-align: center;
+			width:12%;
+		}
+		table {width:800px; border:1px solid #666; margin-bottom: 30px; max-height:200px; overflow: scroll;}
+
+	</style>
+</head>
+<body>
+	<div id="app">
+		<button @click="start">启动</button>
+		<button @click="futureTrade(1000,1,1)">下单</button>
+		<button @click="futureCancelOrder(6465769535)">撤xxx</button>
+		<br>
+		<input v-model="inpStep" type="text"> <button @click="setStep()">重设step</button>
+		
+		<p>oneOrder</p>
+		<table id="processing">
+			<tr>
+				<th>订单号</th><th>下单成功时间</th>
+			</tr>
+			<tr>
+				<td>{{oneOrder['order_id']}}</td>				
+				<td>{{formatDate(oneOrder.create_date)}}</td>
+			</tr>		
+		</table>
+
+		{{receiveTime - sendTime}}
+		<p>direction: {{btcDirection}}</p>
+		
+		<p v-if="btcDirection=='d'">btc_CloseLongRate:<span style="color:#33f"> {{btc_CloseLongRate}}</span></p>
+		<p v-if="btcDirection=='k'">btc_CloseShortRate: <span style="color:#33f">{{btc_CloseShortRate}}</span></p>
+		<p v-if="btcDirection=='d'">当前多仓止损rate是btc_zhiduorate: <span style="color:red">{{btc_zhiDuoRate}}</span></p>
+		<p v-if="btcDirection=='k'">当前空仓止损rate是zhikongrate:<span style="color:red"> {{btc_zhiKongRate}}</span></p>
+		<br>
+		<p>平单委托价格curPlantOrder.price:<span style="color:#33f"> {{curPlantOrder.price}}</span></p>
+		<p>平单止损价格btc_StopPrice:<span style="color:red"> {{btc_StopPrice}}</span></p>
+		<p>提示：{{someTips}}</p>
+		<p>提示：{{someTips2}}</p>
+		<br>
+		<p>btc_hasLost: {{getHasLost()}}</p>	
+		<p>step: {{step}}(1.开仓成功。2，平单等待成交。3.发生了撤单，因为止损，已经撤单成功。4.平单完全成交（止盈单或者止损单）)</p>
+		<br>
+		<p>btcAmount: {{btcAmount}}</p>,当前止损次数{{calCancelTimes()}}
+		<p>originbtcAmount: {{originbtcAmount}}</p>
+		<br>
+		<p>启动后最大止损次数{{maxC}}<p>
+		<p>设定的止损limit：{{limit}}</p>
+		<br>
+		
+	<!-- 	<p>curPlantOrder.order_id: {{curPlantOrder.order_id}}</p> -->
+		<p>平单创建日期curPlantOrder.create_date: {{formatDate(curPlantOrder.create_date)}}</p>
+		
+
+		
+
+		
+		<div>
+			<p v-if="startTime">
+				系统启动时间：{{formatDate(startTime)}}
+			</p>
+		</div>
+		<div id="status">
+			<p v-if="connected>0">CONNECTED:+{{connected}}</p>
+			<p v-if="error>0">ERROR:+{{error}} {{errorStr}}</p>
+			<p v-if="disconnected>0">DISCONNECTED:+{{disconnected}}</p>
+		</div>
+		<div id="output"></div>
+	</div>
+</body>
+<script type="text/javascript" src="MD5.js"></script>
+<script src="../jquery-3.2.1.js"></script>
+<script src="../vue.js"></script>
+<script>
+var app = new Vue({
+	el:"#app",
+	data: {
+		
+		okCoinWebSocket:{},
+
+		btc_newestOrderTime:'',
+		inpStep:'',
+		limit:7,
+		oneOrder:'',
+		destination:'',
+		someTips:'',
+		someTips2:'',
+		zhisunTimer:'',
+		zhisunOrder:'',
+		tickerData:{},
+		tickerOrder:'',
+		curPlantOrder:'',
+		tickerPosition:'',
+		btcBond:-1,
+		btcDirection:"d",// "d"&"k"
+		curbtcSell:'',
+		curbtcBuy:'',
+		btcAmount:6,
+		originbtcAmount:6,
+		stop:false,
+		btc_CloseLongRate: 1.002,
+		originlongrate: 1.002,
+		btc_CloseShortRate: 0.998,
+		originshortrate: 0.998,
+		btc_kaiPrice:'',
+		btc_StopPrice:'',
+		btc_zhiDuoRate: 0.998,
+		originzhiduorate:0.998,
+		btc_zhiKongRate: 1.002,
+		originzhikongrate:1.002,
+		step:0,
+		cancelSuc:'',
+		btc_remain:'',
+		zaiCancelZhongXialeZhisun:'',
+		btc_saveRemain:'',
+		realzhisunPrice:'',
+		realzhisunAmount:'',
+		stopD:'',
+		stopK:'',
+		canceling:'',
+
+		maxC: 0,
+		
+
+
+
+		curTime: '',
+
+		//开多订单库
+		proxyingArr: [],
+		//正在请求中的开多订单库
+		proxyingArr1: [],
+		//平多订单库
+		sellingArr:[],
+
+		//当前kline开盘价
+		kaipan15min:'',
+		//当前cycle的时间戳，与开盘价一同更新
+		cur15minTime:'',
+		
+		
+		//所有未完成订单 {order_id:'',seq:''}
+		allOrder:[],
+		//所有已完成、未完成订单 
+		finishArr: [],
+		unfinishArr: [],
+		//系统启动时间
+		startTime: '',
+		//将要撤单的订单
+		retreatArr: [],
+		//将要平的多单
+		plantArr: [],
+		//将要平仓的多单
+		nextTickAmount: [],
+		//打印信息
+		programInfo: [],
+		connected: 0,
+		error: 0,
+		disconnected: 0,
+		errorStr: '',
+
+
+
+
+		cycleNum:300000,
+		subKline:'ok_sub_futureusd_btc_kline_quarter_5min',
+		kaiduoRate1:0.99802,
+		kaiduoRate2:0.001,
+		pingduoRate1:1.00198,
+		pingduoRate2:1.0014,
+		deltaLimit:30000,
+		delta:0,
+		amount:8,
+		changingAmount: [],
+		leverRate:20,
+
+		origin:0.99802,
+
+
+		curOrder:'',
+		dueAmount:0,
+
+		receiveTime:0,
+		sendTime:0,
+
+		amountArr:[7,6,5,4],
+		originArr:[7,6,5,4],
+		fazhi:[3000,2500,2000],
+
+
+
+
+
+
+
+	},
+
+
+	methods: {
+		pointOneOrder: function(order){
+			var $this = this;
+			if($this.btc_newestOrderTime===''){
+				console.info("指定了新的oneorder,新的时间是："+$this.formatDate(order.create_date)+"旧的时间：空")
+				$this.oneOrder = order;
+				$this.btc_newestOrderTime = order.create_date;
+				window.localStorage.setItem("btc_newestOrderTime",String(order.create_date))
+				return true;
+			}else if($this.btc_newestOrderTime>order.create_date){
+				console.info("这个order.create_date < btc_newestOrderTime，不能把它赋给oneOrder，此订单时间是："+order.create_date+"而原订单时间是："+$this.btc_newestOrderTime)
+				return false;
+			}else{
+				console.info("指定了新的oneorder,新的时间是："+$this.formatDate(order.create_date)+"旧的时间："+$this.formatDate($this.oneOrder.create_date))
+				$this.oneOrder = order;
+				$this.btc_newestOrderTime = order.create_date;
+				window.localStorage.setItem("btc_newestOrderTime",String(order.create_date))
+
+				return true;
+			}
+		},
+		confirmOneOrder: function(order){
+			var $this = this;
+			if(order.create_date<$this.btc_newestOrderTime){
+				return false;
+			}else{
+
+			}
+		},
+		setStep: function(){
+			var $this = this;
+
+			$this.step = parseInt($this.inpStep);
+			console.info("你手动修改了当前step为...."+$this.step)
+		},
+		cal: function(limit){
+			var $this = this;
+
+			var once = 1;
+
+			for(var i=0; i<limit; i++){
+				once = once * 2;
+			}
+
+			return once;
+
+		},
+		calCancelTimes: function(){
+			var $this = this;
+			var r = $this.btcAmount/$this.originbtcAmount;
+			var cancelTime = Math.log(r)*Math.LOG2E
+
+			if(cancelTime>$this.maxC){
+				$this.maxC = cancelTime;
+			}
+			return cancelTime;
+		},
+		notifySTOP:function(dir){
+			var $this = this;
+			if(dir=='d'){
+				$this.stopD = true;
+			}else if(dir=='k'){
+				$this.stopK = true;
+			}
+		},
+		getHasLost:function(){
+			if(window.localStorage.getItem("btc_hasLost")===null){
+				return "缓存中没有btc_hasLost,崭新的系统还没有过亏损（止损单）"
+			}else if(window.localStorage.getItem("btc_hasLost")==='0'){
+				return "0"
+			}else{
+				return window.localStorage.getItem("btc_hasLost")
+			}
+		},
+		tradeBTC: function(){
+			var $this = this;
+			var data = $this.tickerData;
+
+			if($this.tickerOrder==''&&$this.btcBond==0&&$this.step==0){
+				if($this.step!=0){
+					console.info("tradeBTC说：我的天呐，这你也能进来？step: "+$this.step);
+					return;
+				}
+				$this.step = 0.5
+				console.log("step: 0.5, 将要去开仓，一切都是刚刚开始")
+			}else{
+				return;
+			}
+
+			var dir = $this.btcDirection;
+			var basePrice;
+			var givePrice;
+			var type=-1;
+			if(dir=='d'){
+				basePrice = data.sell;
+				givePrice = basePrice*1.005
+				type = 1;
+
+			}else if(dir=='k'){
+				basePrice = data.buy;
+				givePrice = basePrice*0.995
+				type = 2;
+			}else{
+				console.log("error:dir is "+dir)
+			}
+
+/*			//如果缓存中有不为0的btcAmount，那么它是真实的btcAmount
+			var lsbtcAmount = window.localStorage.getItem("btcAmount");
+			if(lsbtcAmount!==null && lsbtcAmount!=='0'){
+				$this.btcAmount = parseFloat(lsbtcAmount); 
+			}*/
+			
+			$this.futureTrade(givePrice,type,$this.btcAmount);
+		},
+		
+		
+
+		ensureAllOrder: function(){
+			var $this = this;
+			//console.log("im checking lost orders...")
+
+
+
+			$this.futureOrderInfo(-1);
+		},
+		formatStatus: function(s){
+			var $this = this;
+			switch(s){
+				case 1: return "部分成交";
+				break;
+				case 2: return "全部成交";
+				break;
+				case 4: return "撤单处理中";
+				break;
+				case -1: return "撤单";
+				break;
+				case 0: return "等待成交";
+				break;
+				default:
+				return '';
+				break;
+			}
+		},
+		formatDate: function(date){
+			var d = new Date(date);
+			return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日"+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+		},
+
+		start: function(){
+			var $this = this;
+			$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "0b8d2c87-cd53-4458-8a6a-ef7363a744fe", "DE9F7E166BD6ABED472C2B5FC21C4C29");
+			$this.startTime = new Date().getTime();
+		},
+
+		checkOrders: function(){
+			var $this = this;
+
+			if($this.oneOrder!==''){
+				$this.futureOrderInfo($this.oneOrder.order_id);
+			}
+			else{
+				console.info("checkorders, but order is KONG str")
+			}
+				
+			
+				
+			
+		},
+		removeOrder: function(arr, id){
+			var $this = this;
+			for(var i=0; i<arr.length; i++){
+				if(arr[i].order_id == id){
+					var temp = arr[i]
+					arr.splice(i, 1);
+					return temp;
+				}
+			}
+			return -1;
+		},
+		addOrder: function(arr, id, order){
+			var $this = this;
+			for(var i=0; i<arr.length; i++){
+				if(arr[i].order_id == id){
+					return;
+				}
+			}
+			arr.push(order);
+		},
+		updateOrder: function(arr, id, order){
+			var $this = this;
+			for(var i=0; i<arr.length; i++){
+				if(arr[i].order_id == id){
+					var temp = arr[i]
+					arr[i] = order;
+					return temp;
+				}
+			}
+			//如果没有查到
+			//arr.push(order)
+			return -1;
+		},
+		searchOrder: function(arr, id){
+			var $this = this;
+			for(var i=0; i<arr.length; i++){
+				if(arr[i].order_id == id){
+					return i;
+				}
+			}
+			return -1;
+		},
+		search:function(arr,num){
+			var $this = this;
+			for(var i=0; i<arr.length; i++){
+				if(arr[i] == num){
+					return i;
+				}
+			}
+			return -1;
+		},
+		computeLost:function(){
+			var $this = this;
+			if($this.btc_kaiPrice==''){
+				$this.btc_kaiPrice = parseFloat(window.localStorage.getItem("btc_kaiPrice"))
+			}
+			var kaiprice = $this.btc_kaiPrice;
+			var pingprice;
+			var zsprice = $this.realzhisunPrice;
+			var amount = $this.btcAmount;
+			var btc_remain = $this.btc_saveRemain;
+			if(btc_remain===''){
+				btc_remain = 0;
+			}
+
+			if($this.btcDirection=='d'){
+
+				pingprice = parseFloat((kaiprice * $this.btc_CloseLongRate).toFixed(3));
+				var usd1 = (pingprice - kaiprice)*(amount-btc_remain)*100/kaiprice;//正数
+				var usd2 = (zsprice-kaiprice)*(btc_remain*100)/kaiprice;//负数
+				
+			}else if($this.btcDirection=='k'){
+				pingprice = parseFloat((kaiprice * $this.btc_CloseShortRate).toFixed(3));
+				var usd1 = -(pingprice - kaiprice)*(amount-btc_remain)*100/kaiprice;//正数
+				var usd2 = -(zsprice-kaiprice)*(btc_remain*100)/kaiprice;//负数
+
+			}
+			var usd = usd1 + usd2;//不一定是正的还是负的
+			var bit = usd1/pingprice + usd2/zsprice;//不一定是正的还是负的
+			
+			if(window.localStorage.getItem("btc_hasLost")===null){
+				window.localStorage.setItem("btc_hasLost",String(bit));
+			}else{
+				var prelost = parseFloat(window.localStorage.getItem("btc_hasLost"));
+				var l = prelost + bit;
+				window.localStorage.setItem("btc_hasLost",String(l));
+
+			}
+			
+
+		},
+		init:function(){
+			var $this = this;
+			window.localStorage.setItem("btc_hasLost",'0');
+			$this.btc_hasLost = 0;
+			window.localStorage.setItem("btc_zhiDuoRate",String($this.originzhiduorate))
+			$this.btc_zhiDuoRate = $this.originzhiduorate;
+			window.localStorage.setItem("btc_zhiKongRate",String($this.originzhikongrate))
+			$this.btc_zhiKongRate = $this.originzhikongrate;
+			window.localStorage.setItem("btc_CloseShortRate",String($this.originshortrate))
+			$this.btc_CloseShortRate = $this.originshortrate;
+			window.localStorage.setItem("btc_CloseLongRate",String($this.originlongrate))
+			$this.btc_CloseLongRate = $this.originlongrate;
+
+		},
+		computeShouldRate:function(price_avg){
+			var $this = this;
+			if(window.localStorage.getItem("btc_hasLost")===null){
+				return;
+			}else if(window.localStorage.getItem("btc_hasLost")==='0'){
+				return;
+			}
+			var btc_hasLost = parseFloat(window.localStorage.getItem("btc_hasLost"));
+			if(btc_hasLost>0){
+				var curTime = new Date().getTime();
+				
+				//debug 20:26:26
+				$this.someTips = "虽然上次发生了止损，但是收益已经补回了前面所有损失，收益是："+btc_hasLost+ ' ' +$this.formatDate(curTime) ;
+				$this.init();
+				return;
+			}
+			var r = $this.btcAmount/$this.originbtcAmount;
+			var cancelTime = Math.log(r)*Math.LOG2E
+			var desRate = 2-Math.sqrt(cancelTime)/4
+
+			var destination = -btc_hasLost*desRate;
+			$this.destination = destination;
+			var btcAmount = $this.btcAmount;
+			if($this.btcDirection=='d'){
+				var duorate;
+				//$this.btcAmount*100/price_avg*(price_avg*duorate-price_avg)/price_avg*duorate=destination
+				duorate = 100*btcAmount/(100*btcAmount - price_avg*destination );
+				$this.btc_CloseLongRate = duorate;
+				window.localStorage.setItem("btc_CloseLongRate",String(duorate))
+				$this.btc_zhiDuoRate = (1-(duorate-1))*0.9991;
+				window.localStorage.setItem("btc_zhiDuoRate",String($this.btc_zhiDuoRate))
+
+
+
+			}else if($this.btcDirection=='k'){
+				var kongrate;
+				//$this.btcAmount*100/price_avg*(price_avg*duorate-price_avg)/price_avg*duorate=destination
+				kongrate = 100*btcAmount/(100*btcAmount + price_avg*destination );
+				$this.btc_CloseShortRate = kongrate;
+				window.localStorage.setItem("btc_CloseShortRate",String(kongrate))
+				$this.btc_zhiKongRate = (1-kongrate+1)*1.0009;
+				window.localStorage.setItem("btc_zhiKongRate",String($this.btc_zhiKongRate))
+			}
+
+		},
+		onMessage: function(e) {
+			var $this = this;
+			//$this.recCount++;
+			//console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
+			var array = JSON.parse(e.data);
+			//msg为除了pong以外的数据消息
+			if(array.length==1){
+				var msg = array[0];
+				if(msg){
+
+					if(msg['channel']=="ok_futureusd_orderinfo"){
+						//console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
+						//console.info("okinfo come in")
+						if(msg['data'].result&&msg['data'].result!='false'){
+							for(var i=0; i<msg['data'].orders.length; i++){
+								var order = msg['data'].orders[i];
+								
+
+
+								if(order.symbol == 'btc_usd'){
+									continue;
+								}
+								if(order.gundan === true){
+									console.info("滚蛋进来了，滚出去！")
+									continue;
+								}
+
+								if(order.status==-1){
+									console.info("已经撤销的单你进来干啥 type,amount:"+order.type+' '+order.amount)
+								}
+
+								var t = $this.btc_newestOrderTime;
+								if(t==''){
+									$this.btc_newestOrderTime = order.create_date;
+									window.localStorage.setItem("btc_newestOrderTime",String(order.create_date))
+									console.info("...............是空................设置了新的 btc_newestOrderTime和oneorder ")
+
+									$this.oneOrder = order;
+
+								}else if(order.create_date<t){
+									console.info("不是最新的订单,continue");
+									continue;
+								}else if(order.create_date>t){
+									
+									$this.btc_newestOrderTime = order.create_date;
+									window.localStorage.setItem("btc_newestOrderTime",String(order.create_date))
+									if(order.create_date>t){
+										console.info("................是大于...............设置了新的 btc_newestOrderTime和oneorder order.type: "+order.type+", order.status: "+order.status+", create_date: "+order.create_date)
+									}
+									
+									$this.oneOrder = order;
+								}
+								
+								if($this.oneOrder==''){
+
+									console.info("如果你看到这句话，也没什么")
+									
+									/*var result = $this.pointOneOrder(order);
+									if(result===false){
+										console.info("虽然可能重启了，但是我还是不能把此订单给oneorder，因为它不是最新的订单")
+										continue;
+									}else if(result===true){
+										console.info("由于某些缘故,系统发生了重启,onorder是空,我将查到的未成交订单赋给oneorder，未完成status包括[0,1...]好像就这俩吧")
+									}*/
+									$this.oneOrder = order;
+									console.info("由于某些缘故,系统发生了重启,onorder是空,我将查到的未成交订单赋给oneorder，未完成status包括[0,1...]好像就这俩吧")
+									
+								}
+
+								//开单处理 特性：一次性成交
+								if(order.type==1 || order.type==2){
+
+									if($this.step != 0.5 && $this.step != 1){
+										console.info("2 orderinfo msg 开单完全成交时说： step不是0.5！你是怎么进来的，oneOrder是：id:"+$this.oneOrder.order_id+"typeof:"+(typeof $this.oneOrder)+"当前step是："+$this.step)
+										if($this.step == 2){
+											if($this.curPlantOrder != ''){
+
+												/*if($this.pointOneOrder($this.curPlantOrder)){
+													console.info("既然step是2，我已经把oneorder重设成了当前的curplantorder")
+												}else{
+													console.info("curPlantOrder不能给oneorder，因为他不是最新的订单")
+												}*/
+												$this.oneOrder = $this.curPlantOrder;
+												
+											}
+										}
+										
+									}
+
+									if($this.tickerOrder==''){
+										$this.tickerOrder = order;
+										
+									}else{
+										if(order.create_date>$this.tickerOrder.create_date){
+											$this.tickerOrder = order;	
+										}
+									}
+
+									if(order.status == 2){
+										$this.btc_kaiPrice = order.price_avg;
+										window.localStorage.setItem("btc_kaiPrice", String(order.price_avg))
+
+										if($this.step != 0.5 && $this.step != 1){
+											console.info("orderinfo msg 开单完全成交时说： step不是0.5也不是1 ！，还不能进行下一步，当前step是："+$this.step)
+											continue;
+										}
+										$this.step = 1;
+										console.log("step: 1, 开单全成交了，将要算算平仓的费率，算完去下平单,有时候开单没有设置新newestordertime的日志，尤其是刚下完止损单的时候，我打印一下开单的人权做个比较，order.create_date: "+order.create_date)
+										$this.computeShouldRate(order.price_avg);
+
+										//...................................handle ls
+										/*var lsbtc_CloseLongRate = window.localStorage.getItem("btc_CloseLongRate")
+										var lsbtc_CloseShortRate = window.localStorage.getItem("btc_CloseShortRate")
+										var lsbtc_zhiDuoRate = window.localStorage.getItem("btc_zhiDuoRate")
+										var lsbtc_zhiKongRate = window.localStorage.getItem("btc_zhiKongRate")
+										if(lsbtc_CloseLongRate!==null && parseFloat(lsbtc_CloseLongRate)!=$this.originlongrate){
+											$this.btc_CloseLongRate = parseFloat(lsbtc_CloseLongRate);
+										}
+										if(lsbtc_CloseShortRate!==null && parseFloat(lsbtc_CloseShortRate)!=$this.originshortrate){
+											$this.btc_CloseShortRate = parseFloat(lsbtc_CloseShortRate);
+										}
+										if(lsbtc_zhiDuoRate!==null && parseFloat(lsbtc_zhiDuoRate)!=$this.originzhiduorate){
+											$this.btc_zhiDuoRate = parseFloat(lsbtc_zhiDuoRate);
+										}
+										if(lsbtc_zhiKongRate!==null && parseFloat(lsbtc_zhiKongRate)!=$this.originzhikongrate){
+											$this.btc_zhiKongRate = parseFloat(lsbtc_zhiKongRate);
+										}*/
+										//handle ls over................................
+
+
+										if(order.type==1){
+											var p = parseFloat((order.price_avg * $this.btc_CloseLongRate).toFixed(3));
+											$this.futureTrade(p, 3, order.deal_amount);
+											$this.btc_StopPrice = parseFloat((order.price_avg * $this.btc_zhiDuoRate).toFixed(3));
+										}else if(order.type==2){
+											var p = parseFloat((order.price_avg * $this.btc_CloseShortRate).toFixed(3));
+											$this.futureTrade(p, 4, order.deal_amount);
+											$this.btc_StopPrice = parseFloat((order.price_avg * $this.btc_zhiKongRate).toFixed(3));
+										}
+										window.localStorage.setItem("btc_StopPrice", String($this.btc_StopPrice));
+										
+										order.gundan = true;
+										
+									}
+								}
+
+								//平单处理， 特性：止盈单不一定一次性成交，止损单一次性成交
+								if(order.type==3 || order.type==4){
+
+									if($this.curPlantOrder == ''){
+										$this.curPlantOrder = order;
+										
+									}else{
+										if(order.create_date>$this.curPlantOrder.create_date){
+											$this.curPlantOrder = order;
+										}
+									}
+
+
+									
+
+									if($this.btc_StopPrice===''){
+										//刷新后没有这个price
+										$this.btc_StopPrice = parseFloat(window.localStorage.getItem("btc_StopPrice"));
+									}
+									
+
+									if(order.status==0 || order.status==1){
+
+										if($this.step !== 1 && $this.step !== 3 && $this.step !== 2){
+											console.info("尚未全部成交的平单说：step不是1或3或2，无法置为2，当前step是："+$this.step)
+											continue;
+
+										}
+										$this.step = 2;
+										console.log("step: 2, 呵呵，平单挂上了，等着成交呢，会不会破止损价呢，还是....？？order.status:"+order.status+"如果从第3步来到这里也不用惊讶，毕竟止损单也是平单啊！如果oneOrder遍历速度和网速超级快的话是有这种可能的");
+
+									}
+									if(order.status==1||order.status==0){
+										$this.btc_remain = order.amount-order.deal_amount;
+										window.localStorage.setItem("btc_remain",String($this.btc_remain))
+									}
+									if(order.status==2){
+
+										if($this.step == 1 || $this.step == 2 || $this.step == 3){
+
+										}else{
+											console.info("全部成交的平单说：step只有2或3或者1才能置为4，当前step是："+$this.step+",continue;")
+											
+											continue;
+										}
+										$this.step = 4;
+										console.log("step: 4, 卧槽牛逼，平单全成交了，我来看看是止盈单还是止损单吧...");
+
+
+										
+
+										if($this.zaiCancelZhongXialeZhisun===true){
+											console.log("step: 4.1, 呵呵，止损单成交了刚才，没事，加码捞回来");
+											$this.realzhisunPrice = order.price_avg;
+
+											$this.computeLost();
+
+											$this.realzhisunAmount = order.deal_amount;
+											var lastAmount = $this.btcAmount;
+
+											var once = $this.cal($this.limit);
+											
+											if($this.btcAmount>=once*$this.originbtcAmount){
+
+												$this.btcAmount = $this.originbtcAmount
+												
+												var l = window.localStorage.getItem("btc_hasLost")
+												var hb;
+												if(window.localStorage.getItem("heartbreakLost")===null){
+													window.localStorage.setItem("heartbreakLost", l);
+												}else{
+													hb = window.localStorage.getItem("heartbreakLost")
+													hb = hb + ', ' + l;
+													window.localStorage.setItem("heartbreakLost", hb)
+												}
+												
+												window.localStorage.setItem("btc_hasLost",'0');
+												$this.btc_hasLost = 0;
+												window.localStorage.setItem("btc_zhiDuoRate",String($this.originzhiduorate))
+												$this.btc_zhiDuoRate = $this.originzhiduorate;
+												window.localStorage.setItem("btc_zhiKongRate",String($this.originzhikongrate))
+												$this.btc_zhiKongRate = $this.originzhikongrate;
+												window.localStorage.setItem("btc_CloseShortRate",String($this.originshortrate))
+												$this.btc_CloseShortRate = $this.originshortrate;
+												window.localStorage.setItem("btc_CloseLongRate",String($this.originlongrate))
+												$this.btc_CloseLongRate = $this.originlongrate;
+											}else{
+												if(parseFloat(window.localStorage.getItem("btc_hasLost"))>=0){
+													$this.btcAmount = $this.originbtcAmount;
+													var curTime = new Date().getTime();
+
+													//debug 20:26:24
+													$this.someTips2 = "收益>=0："+btc_hasLost+ ' ' +$this.formatDate(curTime) +',不再增加amount以减小风险,';
+												}else{
+													$this.btcAmount = $this.btcAmount*2;
+												}
+												
+											}
+											
+											window.localStorage.setItem("btcAmount",String($this.btcAmount))
+											
+											order.type==3 ? $this.btcDirection = 'k' : $this.btcDirection = 'd'; 
+											window.localStorage.setItem("btcDirection",$this.btcDirection)
+
+											
+											var btc_hasLost = parseFloat(window.localStorage.getItem("btc_hasLost"))
+											$this.btc_hasLost = btc_hasLost;
+
+											$this.zaiCancelZhongXialeZhisun = false;
+											
+
+										}else{
+											console.info("之前这块老出问题，我查查是哪个sb捣乱：")
+											console.log("order.gundan: "+order.gundan+", order.amount: "+order.amount+", order.type: "+order.type+", order.create_date: "+$this.formatDate(order.create_date));
+											console.log("step: 4.1, 止盈单成交了，叼叼叼，666");
+											if(window.localStorage.getItem("btc_hasLost")!==null){
+												window.localStorage.setItem("btc_hasLost",'0');
+											}
+											
+											$this.btc_hasLost = 0;
+											//window.localStorage.setItem("btc_hasLost",'0');
+											
+											$this.btcAmount = $this.originbtcAmount ;
+											window.localStorage.setItem("btcAmount",String($this.btcAmount))
+											
+											$this.btc_CloseLongRate = $this.originlongrate;
+											window.localStorage.setItem("btc_CloseLongRate",String($this.originlongrate))
+											
+											$this.btc_CloseShortRate = $this.originshortrate;
+											window.localStorage.setItem("btc_CloseShortRate",String($this.originshortrate))
+											
+											$this.btc_zhiDuoRate = $this.originzhiduorate;
+											window.localStorage.setItem("btc_zhiDuoRate",String($this.btc_zhiDuoRate))
+											
+											$this.btc_zhiKongRate = $this.originzhikongrate;
+											window.localStorage.setItem("btc_zhiKongRate",String($this.btc_zhiKongRate))
+											
+											order.type==3 ? $this.btcDirection = 'd' : $this.btcDirection = 'k';
+											window.localStorage.setItem("btcDirection",$this.btcDirection)
+
+											window.localStorage.setItem("btc_StopPrice",'');
+											$this.btc_StopPrice = '';
+
+											$this.btc_remain = '';
+											window.localStorage.setItem("btc_remain",String($this.btc_remain))
+										}
+										
+										$this.step = 0;
+										$this.tickerOrder = '';
+										//$this.futureUserInfo();
+
+										/*if($this.stop==true){
+											//止损单
+											order.type==3 ? $this.btcDirection = 'k' : $this.btcDirection = 'd'; 
+										}else{
+											order.type==3 ? $this.btcDirection = 'd' : $this.btcDirection = 'k';
+										}*/
+										order.gundan = true;
+										
+									}
+								}
+
+								
+								
+/*
+								if(order.status==2){
+
+									//移出系统遍历队列
+									$this.removeOrder($this.allOrder,order.order_id)
+									$this.removeOrder($this.unfinishArr,order.order_id)
+									//加入完成队列
+									//$this.addOrder($this.finishArr,order.order_id,order);
+									if(order.type==1){
+
+
+										//尝试去卖？
+
+										//所开多单全部成交，去平多单,
+										if($this.updateOrder($this.nextTickAmount,order.order_id,order)==-1){
+											$this.addOrder($this.nextTickAmount,order.order_id,order)
+										}
+									}
+
+								}else{
+									//未完全成交
+									if($this.updateOrder($this.unfinishArr,order.order_id,order)==-1){
+										$this.addOrder($this.unfinishArr,order.order_id,order)
+									}
+									var curTime = new Date().getTime();
+									//未完全成交的多单
+									if((order.status==0 || order.status==1) && order.type==1){
+										//超时未完全成交的多单
+										var cycleTime = order.create_date-order.create_date%$this.cycleNum
+										if(cycleTime+$this.cycleNum<curTime){
+											//预备撤单
+											$this.dueAmount = 0;
+											$this.addOrder($this.retreatArr,order.order_id,order);
+										}
+										if(order.deal_amount>0){
+										//有所成交
+											if($this.updateOrder($this.nextTickAmount,order.order_id,order)==-1){
+												$this.addOrder($this.nextTickAmount,order.order_id,order)
+											}
+										}
+										
+										
+									}
+									//已经撤单
+									if(order.status==-1){
+										if(order.deal_amount>0){
+										//有所成交
+											if($this.updateOrder($this.nextTickAmount,order.order_id,order)==-1){
+												$this.addOrder($this.nextTickAmount,order.order_id,order)
+											}
+										}
+										//移出系统遍历队列
+										$this.removeOrder($this.allOrder,order.order_id)
+										$this.removeOrder($this.unfinishArr,order.order_id)
+										
+									}
+								}*/
+								
+								
+
+							}
+						}
+					}
+					else if(msg['channel']=="ok_futureusd_trade"){
+
+						if(msg['data'].result&&msg['data'].result!='false'){
+							if($this.zhisunTimer!==''){
+								clearInterval($this.zhisunTimer);
+								$this.zhisunTimer = '';
+							}
+							
+							$this.zhisunOrder = '';
+
+							var time = new Date().getTime()
+							$this.receiveTime = time;
+							var order = {
+								order_id: msg['data'].order_id,
+								create_date: time
+							}
+
+							//$this.allOrder.push(order);
+							//$this.proxyingArr.push(order);
+
+							//尝试着不在这里指定
+							//$this.pointOneOrder(order);
+							$this.oneOrder = order;
+							
+
+							
+						}else{
+							if($this.zhisunOrder!==''){
+								var o = $this.zhisunOrder;
+								$this.zhisunTimer = setInterval(function(){
+									$this.futureTrade(o.price, o.type, o.amount);
+								},330);
+							}
+							
+						}
+					}else if(msg['channel']=='ok_futureusd_cancel_order'){
+
+						if(msg['data'].result&&msg['data'].result!='false'){
+							var id = msg['data'].order_id;
+							
+							$this.cancelSuc = true;
+							$this.canceling = false;
+							$this.stopD === true ? $this.stopD = false : ($this.stopK === true ? $this.stopK = false:console.log("WTF?"));
+
+							$this.step = 3;
+							console.info("step is 3,撤单成功了，将要下止损单")
+
+							var type;
+							var rate;
+							if($this.btcDirection=='d'){
+								type=3;
+								rate=0.99;
+							}else if($this.btcDirection=='k'){
+								type=4;
+								rate=1.01
+							}
+							
+							//保存btc_remain
+
+							$this.btc_saveRemain = $this.btc_remain;
+							window.localStorage.setItem("btc_saveRemain", String($this.btc_remain))
+
+							if($this.btc_StopPrice===''){
+								//刷新后没有这个price
+								$this.btc_StopPrice = parseFloat(window.localStorage.getItem("btc_StopPrice"));
+							}
+							if($this.btc_remain===''){
+								//刷新后没有这个price
+								$this.btc_remain = parseFloat(window.localStorage.getItem("btc_remain"));
+							}
+
+							var r = $this.btc_remain;
+							var t = type;
+							var p = $this.btc_StopPrice*rate;
+							var zhisunOrder = {
+								type: t,
+								amount: r,
+								price: p
+							};
+							$this.zhisunOrder = zhisunOrder;
+
+							//下面下的单一定成交
+							console.info("下止损单前的平仓量btc_remain： "+$this.btc_remain+", type: "+type)
+							$this.futureTrade($this.btc_StopPrice*rate,type,$this.btc_remain);
+							console.info("发出了止损单指令")
+
+
+
+
+							$this.zaiCancelZhongXialeZhisun = true;
+							//$this.stop = false;
+							
+						}else{
+							console.info("撤单失败： " + msg['data'].error_code);
+							$this.cancelSuc = false;
+							console.info("咋又失败了呢？看看哪个孙子id: "+$this.curPlantOrder.id+", amount: "+$this.curPlantOrder.amount+", type: "+$this.curPlantOrder.type+", create_date: "+$this.formatDate($this.curPlantOrder.create_date)+", status: "+$this.curPlantOrder.status)
+							console.info("stopD:"+$this.stopD+", stopK:"+$this.stopK)
+						}
+						
+					}else if(msg['channel']=="ok_sub_futureusd_btc_ticker_quarter"){
+						var data = msg['data'];
+						$this.tickerData = data;
+
+						
+
+
+					}else if(msg['channel']=="ok_sub_futureusd_btc_trade_quarter"){
+						//console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
+						var len = msg['data'].length;
+						var data = msg['data'][len-1];
+						var price = data[1];
+						if($this.btc_StopPrice!==''){
+							if($this.btcDirection=='d'){
+								
+								if(price<=$this.btc_StopPrice && $this.step==2){
+									//撤单//止损//下新单
+									//var order = $this.curPlantOrder;
+									
+									$this.notifySTOP("d");
+									//$this.addOrder($this.retreatArr,order.order_id,order);
+									
+									
+
+									$this.stop = true;
+								}
+							}else if($this.btcDirection=='k'){
+								if(price>=$this.btc_StopPrice && $this.step==2){
+									//var order = $this.curPlantOrder;
+									$this.notifySTOP("k");
+									//$this.curCancelId = order.order_id;
+									//$this.addOrder($this.retreatArr,order.order_id,order);
+									//$this.futureCancelOrder(order.order_id);
+		
+									$this.stop = true;
+								}
+							}
+						}
+
+
+					}
+					//只有委托没有仓位
+					//[{"contract_type":"this_week","freeze":0.01136364,"balance":0,"available":2.98263636,"contractid":20170714116,"bond":0,"profit":0,"unprofit":0}]
+					//既有委托又有仓位
+					//[{"contract_type":"this_week","freeze":0.01136364,"balance":0.01026602,"available":2.97237034,"contractid":20170714116,"bond":0.01020408,"profit":-0.00006194,"unprofit":0}]
+					//有仓位没委托
+					//[{"contract_type":"this_week","freeze":0,"balance":0.01026602,"available":2.98373398,"contractid":20170714116,"bond":0.01020408,"profit":-0.00006194,"unprofit":-0.00010}]
+					//没委托没仓位
+					//[{"contract_type":"this_week","freeze":0,"balance":0.00020698,"available":2.99379302,"contractid":20170714116,"bond":0,"profit":-0.00020698,"unprofit":0}]
+					else if(msg['channel']=="ok_futureusd_userinfo"){
+						var data = msg['data'];
+						if(data.result==true){
+							var objBTCInfo = data['info']['btc']
+							var quarterExist = false;
+							if(objBTCInfo['contracts'].length == 0){
+								$this.btcBond = 0;
+							}
+							for(var i in objBTCInfo['contracts']){
+								if(objBTCInfo['contracts'][i]['contract_type']=='quarter'){
+									quarterExist = true;
+									$this.btcBond = objBTCInfo['contracts'][i]['bond']
+									//console.log("btc bond get: "+$this.btcBond)
+									//console.log("step: "+$this.step)
+
+								}
+							}
+							if(quarterExist==false){
+								$this.btcBond = 0;
+								console.info("没有也等于0了")
+							}
+						}else{
+							$this.futureUserInfo();
+						}
+
+
+					}
+					
+				}
+			}else{
+				var msg = array;
+				for(var i in msg){
+					if(msg[i]['channel']=="ok_sub_futureusd_positions"){
+						if(msg[i]['data']['symbol']=='btc_usd'){
+							var positionArr = msg[i]['data']['positions']
+							var dAmount=0;
+							var kAmount=0;
+							for(var i in positionArr){
+								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
+									dAmount = parseFloat(positionArr[i]['hold_amount']);
+								}else if(positionArr[i]['position']=='2'&&positionArr[i]['lever_rate']==20){
+									kAmount = parseFloat(positionArr[i]['hold_amount']);
+								}							
+							}							
+						}
+						
+
+					}else if(msg[i]['channel']=="ok_sub_futureusd_trades"){
+						var data = msg[i]['data'];
+						if(data.contract_name.indexOf("BTC")==0){
+							if(data.type==3||data.type==4){
+								if(data.status==1||data.status==0){
+									$this.btc_remain = data.amount - data.deal_amount;
+									window.localStorage.setItem("btc_remain",String($this.btc_remain))
+								}
+							}
+						}
+						
+
+					}
+				}
+			}
+
+
+
+			if(array.event == 'pong') {
+				$this.okCoinWebSocket.lastHeartBeat = new Date().getTime();
+			} else {
+				//$this.createTable(array);
+			}
+		},
+
+		
+		retreat: function(){
+			var $this = this;
+
+
+			if($this.step != 2){
+				//console.info("撤单函数说：只有step=2的时候才让撤,别撤了，当前step是："+$this.step);
+				return;
+			}
+			if($this.cancelSuc===false){
+				$this.futureCancelOrder($this.curPlantOrder.order_id);
+			}
+
+			if($this.canceling===true){
+				return;
+			}
+			if($this.stopD===true){
+				$this.futureCancelOrder($this.curPlantOrder.order_id);
+				$this.canceling = true;
+			}
+			if($this.stopK===true){
+				$this.futureCancelOrder($this.curPlantOrder.order_id);
+				$this.canceling = true;
+			}
+
+			
+		},
+		
+		
+
+
+		doSend: function(message) {
+			var $this = this;
+			//$this.sendCount++;
+
+			if($this.okCoinWebSocket){
+				var ws = $this.okCoinWebSocket.websocket
+				this.send = function (message, callback) {
+				    this.waitForConnection(function () {
+				        ws.send(message);
+				        if (typeof callback !== 'undefined') {
+				          callback();
+				        }
+				    }, 100);
+				};
+
+				this.waitForConnection = function (callback, interval) {
+				    if (ws.readyState === 1) {
+				        callback();
+				    } else {
+				        var that = this;
+				        // optional: implement backoff for interval here
+				        setTimeout(function () {
+				            that.waitForConnection(callback, interval);
+				        }, interval);
+				    }
+				};
+
+
+				this.send(message);
+			}
+			
+			
+		},
+		onOpen: function(evt) {
+			var $this = this;
+
+			$this.connected++;
+			var str = "{'event':'addChannel','channel':'"+$this.subKline+"'}"
+
+			//订阅btc合约行情，为了买一和卖一价格，作为baseprice
+			var strTicker = "{'event':'addChannel','channel':'ok_sub_futureusd_btc_ticker_quarter'}"
+
+			//订阅大盘交易信息，为了判断是否破止损价
+			var strDeal = "{'event':'addChannel','channel':'ok_sub_futureusd_btc_trade_quarter'}"
+			
+			$this.doSend(str);
+			$this.doSend(strTicker);
+			$this.doSend(strDeal);
+
+			$this.futurePositions();
+
+			$this.futureTrades();
+
+
+			
+
+
+			
+			
+		},
+		
+	
+		onError: function(evt) {
+			var $this = this;
+
+			$this.error++;
+			$this.errorStr += error+'. '+evt.data;
+
+
+		},
+		onClose: function(evt) {
+			var $this = this;
+
+			$this.disconnected++;
+		},
+		checkConnect: function () {
+			var $this = this;
+			var ws = $this.okCoinWebSocket.websocket
+			this.send = function (message, callback) {
+			    this.waitForConnection(function () {
+			        ws.send(message);
+			        if (typeof callback !== 'undefined') {
+			          callback();
+			        }
+			    }, 100);
+			};
+
+			this.waitForConnection = function (callback, interval) {
+			    if (ws.readyState === 1) {
+			        callback();
+			    } else {
+			        var that = this;
+			        // optional: implement backoff for interval here
+			        setTimeout(function () {
+			            that.waitForConnection(callback, interval);
+			        }, interval);
+			    }
+			};
+
+
+			this.send("{'event':'ping'}");
+			
+			if ((new Date().getTime() - $this.okCoinWebSocket.lastHeartBeat) > $this.okCoinWebSocket.overtime) {
+				console.log("socket 连接断开，正在尝试重新建立连接");
+				//testWebSocket();
+				$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "0b8d2c87-cd53-4458-8a6a-ef7363a744fe", "DE9F7E166BD6ABED472C2B5FC21C4C29");
+
+			}
+		},
+		futureOrderInfo: function(orderId) {
+			//-1表示未完成订单
+
+			var $this = this;
+			var okCoinWebSocket = $this.okCoinWebSocket;
+			/*var str = "api_key=" + okCoinWebSocket.api_key + "&contract_type=quarter&current_page=1&order_id=" + orderId + "&page_length=1&secret_key=" + okCoinWebSocket.secret_key + "&status=1&symbol=btc_usd"*/
+			var str = "api_key=" + okCoinWebSocket.api_key + "&contract_type=quarter&current_page=1&order_id=" + orderId + "&page_length=50&status=1&symbol=btc_usd&secret_key=" + okCoinWebSocket.secret_key
+
+			var sign = MD5(str);
+			$this.doSend("{'event': 'addChannel','channel': 'ok_futureusd_orderinfo','parameters': {'api_key': '"
+					+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'btc_usd','order_id': '" + orderId
+					+ "','contract_type': 'quarter','status':'1','current_page':'1','page_length':'50'}}");
+		},
+		//合约下单
+		futureTrade: function (price,type,amount) {
+			var $this = this;
+			var lv = $this.leverRate;
+			
+			$this.sendTime = new Date()
+			var okCoinWebSocket = $this.okCoinWebSocket;
+			var str = "amount="+ amount +"&api_key=" + okCoinWebSocket.api_key + 
+					"&contract_type=quarter&lever_rate="+lv+"&match_price=0&price=" + price + "&symbol=btc_usd&type="+ type +"&secret_key=" + okCoinWebSocket.secret_key
+	
+			var sign = MD5(str);
+			$this.doSend("{'event': 'addChannel','channel':'ok_futureusd_trade','parameters': {'api_key': '"+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'btc_usd','contract_type': 'quarter','amount': "+ amount +",'price': "+price+",'type': "+type+",'match_price': '0','lever_rate':" +lv+"}}");
+			
+		},
+		//撤单
+		futureCancelOrder: function(orderId) {
+			var $this = this;
+			var okCoinWebSocket = $this.okCoinWebSocket;
+			var sign = MD5("api_key=" + okCoinWebSocket.api_key + "&contract_type=quarter&order_id=" + orderId
+					+ "&symbol=btc_usd&secret_key=" + okCoinWebSocket.secret_key);
+			$this.doSend("{'event': 'addChannel','channel': 'ok_futureusd_cancel_order','parameters': {'api_key': '"
+					+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'btc_usd','order_id': '" + orderId
+					+ "','contract_type': 'quarter'}}");
+		},
+		futurePositions: function() {
+			var $this = this;
+			var okCoinWebSocket = $this.okCoinWebSocket;
+			var sign = MD5("api_key=" + okCoinWebSocket.api_key + "&secret_key=" + okCoinWebSocket.secret_key);
+			$this.doSend("{'event':'addChannel','channel':'ok_sub_futureusd_positions','parameters' :{'api_key':'"
+					+ okCoinWebSocket.api_key + "','sign':'" + sign + "'}}");
+		},
+		futureUserInfo:function () {
+			var $this = this;
+			var okCoinWebSocket = $this.okCoinWebSocket;
+			var sign = MD5("api_key=" + okCoinWebSocket.api_key + "&secret_key=" + okCoinWebSocket.secret_key);
+			$this.doSend("{'event':'addChannel','channel':'ok_futureusd_userinfo','parameters' :{'api_key':'"
+					+ okCoinWebSocket.api_key + "','sign':'" + sign + "'}}");
+		},
+		futureTrades: function() {
+			var $this = this;
+			var okCoinWebSocket = $this.okCoinWebSocket;
+			var sign = MD5("api_key=" + okCoinWebSocket.api_key + "&secret_key=" + okCoinWebSocket.secret_key);
+			$this.doSend("{'event':'addChannel','channel':'ok_sub_futureusd_trades','parameters' :{'api_key':'"
+					+ okCoinWebSocket.api_key + "','sign':'" + sign + "'}}");
+		},
+		setData:function(){
+			var $this = this;
+
+			/*for(var i in window.localStorage){
+			  	console.log("this[i] is " + $this[i])
+			  	$this[i] = window.localStorage[i];
+			}*/
+			var ls = window.localStorage;
+			if(ls.getItem('btcDirection')!==null){
+				$this.btcDirection = ls['btcDirection'];
+			}
+			if(ls.getItem('btc_StopPrice')!==null){
+				$this.btc_StopPrice = parseFloat(ls['btc_StopPrice']);
+			}
+			if(ls.getItem('btc_remain')!==null){
+				$this.btc_remain = parseFloat(ls['btc_remain']);
+			}
+			if(ls.getItem('btc_CloseLongRate')!==null){
+				$this.btc_CloseLongRate = parseFloat(ls['btc_CloseLongRate']);
+			}
+			if(ls.getItem('btc_CloseShortRate')!==null){
+				$this.btc_CloseShortRate = parseFloat(ls['btc_CloseShortRate']);
+			}
+			if(ls.getItem('btc_zhiDuoRate')!==null){
+				$this.btc_zhiDuoRate = parseFloat(ls['btc_zhiDuoRate']);
+			}
+			if(ls.getItem('btc_zhiKongRate')!==null){
+				$this.btc_zhiKongRate = parseFloat(ls['btc_zhiKongRate']);
+			}
+			if(ls.getItem('btcAmount')!==null){
+				$this.btcAmount = parseFloat(ls['btcAmount']);
+			}
+			if(ls.getItem('btc_hasLost')!==null){
+				$this.btc_hasLost = parseFloat(ls['btc_hasLost']);
+			}
+			if(ls.getItem('btc_kaiPrice')!==null){
+				$this.btc_kaiPrice = parseFloat(ls['btc_kaiPrice']);
+			}
+			if(ls.getItem('btc_saveRemain')!==null){
+				$this.btc_saveRemain = parseFloat(ls['btc_saveRemain']);
+			}
+			if(ls.getItem('btc_newestOrderTime')!==null){
+				$this.btc_newestOrderTime = parseInt(ls['btc_newestOrderTime']);
+			}
+			
+		}
+						
+	},
+	mounted() {
+		var $this = this;
+
+		$this.setData();
+		$this.okCoinWebSocket.init = function(uri, apiKey, secretKey) {
+			this.wsUri = uri;
+			this.api_key = apiKey;
+			this.secret_key = secretKey;
+			this.lastHeartBeat = new Date().getTime();
+			this.overtime = 8000;
+			var okCoinWebSocket = $this.okCoinWebSocket;
+			
+			okCoinWebSocket.websocket = new WebSocket(okCoinWebSocket.wsUri);
+			
+			okCoinWebSocket.websocket.onopen = function(evt) {
+				$this.onOpen(evt)
+			};
+			okCoinWebSocket.websocket.onclose = function(evt) {
+				$this.onClose(evt)
+			};
+			okCoinWebSocket.websocket.onmessage = function(evt) {
+				$this.onMessage(evt)
+			};
+			okCoinWebSocket.websocket.onerror = function(evt) {
+				$this.onError(evt)
+			};
+			
+			setInterval($this.checkConnect,2000);
+			
+			setInterval($this.checkOrders,500);
+
+			setInterval($this.ensureAllOrder,2000);
+
+			//获取用户信息，检查保证金是否为0，为0则满足开仓条件之一
+			setInterval($this.futureUserInfo,500);
+
+			setInterval($this.retreat,400);
+
+			setInterval($this.tradeBTC,1000);
+
+		}
+		$this.start();
+
+		
+				
+	}
+})
+</script>
+</html>

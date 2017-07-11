@@ -88,6 +88,7 @@ var app = new Vue({
 		
 		okCoinWebSocket:{},
 
+		tp: '',
 		newestOrderTime:'',
 		inpStep:'',
 		limit:7,
@@ -508,8 +509,17 @@ var app = new Vue({
 				duorate = 10*ltcAmount/(10*ltcAmount - price_avg*destination );
 				$this.CloseLongRate = duorate;
 				window.localStorage.setItem("CloseLongRate",String(duorate))
+				/*if(duorate<1.002){
+					$this.zhiDuoRate = 0.998*0.9991;
+					console.info("duorate太小了，这样的话止损率不能太小，否则触发止损过于容易，产生震荡崩塌")
+				}else{
+					$this.zhiDuoRate = (1-(duorate-1))*0.9991;
+				}*/
+				//震荡应该是由于推送的price不准确导致的
 				$this.zhiDuoRate = (1-(duorate-1))*0.9991;
+				
 				window.localStorage.setItem("zhiDuoRate",String($this.zhiDuoRate))
+				console.info("computeShouldRate: 止盈率,止损率:"+$this.CloseLongRate+', '+$this.zhiDuoRate)
 
 
 
@@ -519,9 +529,19 @@ var app = new Vue({
 				kongrate = 10*ltcAmount/(10*ltcAmount + price_avg*destination );
 				$this.CloseShortRate = kongrate;
 				window.localStorage.setItem("CloseShortRate",String(kongrate))
+				/*if(kongrate>0.998){
+					$this.zhiKongRate = 1.002*1.0009;
+					console.info("kongrate太小(大)了，这样的话止损率不能太小，否则触发止损过于容易，产生震荡崩塌")
+				}else{
+					$this.zhiKongRate = (1-kongrate+1)*1.0009;
+				}*/
+				//震荡应该是由于推送的price不准确导致的
 				$this.zhiKongRate = (1-kongrate+1)*1.0009;
+
 				window.localStorage.setItem("zhiKongRate",String($this.zhiKongRate))
+				console.info("computeShouldRate: 止盈率,止损率:"+$this.CloseShortRate+', '+$this.zhiKongRate)
 			}
+			
 
 		},
 		onMessage: function(e) {
@@ -1008,33 +1028,15 @@ var app = new Vue({
 						var len = msg['data'].length;
 						var data = msg['data'][len-1];
 						var price = data[1];
-						if($this.StopPrice!==''){
-							if($this.ltcDirection=='d'){
-								
-								if(price<=$this.StopPrice && $this.step==2){
-									//撤单//止损//下新单
-									//var order = $this.curPlantOrder;
-									
-									$this.notifySTOP("d");
-									//$this.addOrder($this.retreatArr,order.order_id,order);
-									
-									
 
-									$this.stop = true;
-								}
-							}else if($this.ltcDirection=='k'){
-								if(price>=$this.StopPrice && $this.step==2){
-									//var order = $this.curPlantOrder;
-									$this.notifySTOP("k");
-									//$this.curCancelId = order.order_id;
-									//$this.addOrder($this.retreatArr,order.order_id,order);
-									//$this.futureCancelOrder(order.order_id);
-		
-									$this.stop = true;
-								}
-							}
+						var curTime = new Date().getTime();
+
+						var tp = {
+							trade_price: price,
+							trade_date: curTime
 						}
 
+						$this.tp = tp;
 
 					}
 					//只有委托没有仓位
@@ -1360,6 +1362,48 @@ var app = new Vue({
 				$this.newestOrderTime = parseInt(ls['newestOrderTime']);
 			}
 			
+		},
+		justify:function(){
+			var $this = this;
+			if($this.step != 2){
+				console.log("还不到检测止损的时候")
+				return;
+			}
+			if($this.StopPrice!==''){
+				var price = $this.tp.trade_price;
+				var time = $this.tp.trade_date;
+				var order = $this.oneOrder;
+
+				if(time < order.create_date){
+					console.log("不合格的市场交易价格，等待新的交易价格")
+					return;
+				}
+				if($this.ltcDirection=='d'){
+
+
+					if(time < $this.oneOrder.create_date)
+					if(price<=$this.StopPrice && $this.step==2 && time>order.create_date){
+						//撤单//止损//下新单
+		
+						console.info("达成止损条件，市场成交价："+price+"击穿了stopPrice："+$this.StopPrice)
+
+						$this.notifySTOP("d");
+
+												
+						$this.stop = true;
+					}
+				}else if($this.ltcDirection=='k'){
+					if(price>=$this.StopPrice && $this.step==2 && time>order.create_date){
+
+						console.info("达成止损条件，市场成交价："+price+"击穿了stopPrice："+$this.StopPrice)
+						
+						$this.notifySTOP("k");
+						
+
+						$this.stop = true;
+					}
+				}
+			}
 		}
 						
 	},
@@ -1402,6 +1446,8 @@ var app = new Vue({
 			setInterval($this.retreat,400);
 
 			setInterval($this.tradeLTC,1000);
+
+			setInterval($this.justify,100);
 
 		}
 		$this.start();

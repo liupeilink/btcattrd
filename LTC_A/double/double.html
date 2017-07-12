@@ -545,6 +545,79 @@ var app = new Vue({
 			
 
 		},
+		computeShouldAmount:function(price_avg){
+			var $this = this;
+			if(window.localStorage.getItem("hasLost")===null){
+				return;
+			}else if(window.localStorage.getItem("hasLost")==='0'){
+				return;
+			}
+			var hasLost = parseFloat(window.localStorage.getItem("hasLost"));
+			if(hasLost>0){
+				var curTime = new Date().getTime();
+				
+				//debug 20:26:26
+				$this.someTips = "虽然上次发生了止损，但是收益已经补回了前面所有损失，收益是："+hasLost+ ' ' +$this.formatDate(curTime) ;
+				$this.init();
+				return;
+			}
+			/*var r = $this.ltcAmount/$this.originltcAmount;
+			var cancelTime = Math.log(r)*Math.LOG2E
+			var desRate = 2-Math.sqrt(cancelTime)/4*/
+			var next = $this.ltcAmount*2
+			var r = next/$this.originltcAmount;
+			var c = Math.log(r)*Math.LOG2E;
+
+			//下次的目标收益率
+			var desRate = 2-Math.sqrt(c)/4
+
+			var destination = -hasLost*desRate;
+			$this.destination = destination;
+			
+			var duorate = $this.originlongrate
+			var kongrate = $this.originshortrate
+			var amount
+			if($this.ltcDirection=='d'){
+
+				amount = Math.ceil(price_avg*destination*duorate/(10*duorate-10))
+
+			}else if($this.ltcDirection=='k'){
+				
+				amount = Math.ceil(price_avg*destination*kongrate/(10-10*kongrate))
+
+			}
+
+			var once = $this.cal($this.limit);
+			if(amount>once*$this.originltcAmount){
+
+				$this.ltcAmount = $this.originltcAmount;
+				window.localStorage.setItem("ltcAmount",String($this.originltcAmount))
+				console.log("heartbreak")
+				var l = window.localStorage.getItem("hasLost")
+				var hb;
+				if(window.localStorage.getItem("heartbreakLost")===null){
+					window.localStorage.setItem("heartbreakLost", l);
+				}else{
+					hb = window.localStorage.getItem("heartbreakLost")
+					hb = hb + ', ' + l;
+					window.localStorage.setItem("heartbreakLost", hb)
+				}
+				
+				window.localStorage.setItem("hasLost",'0');
+				$this.hasLost = 0;
+
+				return;
+			}
+			if(amount<$this.originltcAmount){
+				amount = $this.originltcAmount
+			}
+			$this.ltcAmount = amount;
+			window.localStorage.setItem("ltcAmount",String(amount))
+			
+			
+			console.info("computeShouldAmount: "+$this.ltcAmount)
+
+		},
 		onMessage: function(e) {
 			var $this = this;
 			//$this.recCount++;
@@ -653,7 +726,7 @@ var app = new Vue({
 										}
 										$this.step = 1;
 										console.log("step: 1, 开单全成交了，将要算算平仓的费率，算完去下平单,有时候开单没有设置新newestordertime的日志，尤其是刚下完止损单的时候，我打印一下开单的人权做个比较，order.create_date: "+order.create_date)
-										$this.computeShouldRate(order.price_avg);
+										//$this.computeShouldRate(order.price_avg);
 
 										//...................................handle ls
 										/*var lsCloseLongRate = window.localStorage.getItem("CloseLongRate")
@@ -758,42 +831,19 @@ var app = new Vue({
 
 											var once = $this.cal($this.limit);
 											
-											if($this.ltcAmount>=once*$this.originltcAmount){
+											
+											if(parseFloat(window.localStorage.getItem("hasLost"))>=0){
+												$this.ltcAmount = $this.originltcAmount;
+												var curTime = new Date().getTime();
 
-												$this.ltcAmount = $this.originltcAmount
-												
-												var l = window.localStorage.getItem("hasLost")
-												var hb;
-												if(window.localStorage.getItem("heartbreakLost")===null){
-													window.localStorage.setItem("heartbreakLost", l);
-												}else{
-													hb = window.localStorage.getItem("heartbreakLost")
-													hb = hb + ', ' + l;
-													window.localStorage.setItem("heartbreakLost", hb)
-												}
-												
-												window.localStorage.setItem("hasLost",'0');
-												$this.hasLost = 0;
-												window.localStorage.setItem("zhiDuoRate",String($this.originzhiduorate))
-												$this.zhiDuoRate = $this.originzhiduorate;
-												window.localStorage.setItem("zhiKongRate",String($this.originzhikongrate))
-												$this.zhiKongRate = $this.originzhikongrate;
-												window.localStorage.setItem("CloseShortRate",String($this.originshortrate))
-												$this.CloseShortRate = $this.originshortrate;
-												window.localStorage.setItem("CloseLongRate",String($this.originlongrate))
-												$this.CloseLongRate = $this.originlongrate;
+												//debug 20:26:24
+												$this.someTips2 = "收益>=0："+hasLost+ ' ' +$this.formatDate(curTime) +',不再增加amount以减小风险,';
 											}else{
-												if(parseFloat(window.localStorage.getItem("hasLost"))>=0){
-													$this.ltcAmount = $this.originltcAmount;
-													var curTime = new Date().getTime();
-
-													//debug 20:26:24
-													$this.someTips2 = "收益>=0："+hasLost+ ' ' +$this.formatDate(curTime) +',不再增加amount以减小风险,';
-												}else{
-													$this.ltcAmount = $this.ltcAmount*2;
-												}
-												
+												//$this.ltcAmount = $this.ltcAmount*2;
+												$this.computeShouldAmount(order.price_avg);
 											}
+												
+											
 											
 											window.localStorage.setItem("ltcAmount",String($this.ltcAmount))
 											

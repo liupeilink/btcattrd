@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>LTC</title>
+	<title>BTC</title>
 	<style>
 		th {background: #ccc;}
 		table td,table th{
@@ -36,23 +36,23 @@
 		</table>
 
 		{{receiveTime - sendTime}}
-		<p>direction: {{ltcDirection}}</p>
+		<p>direction: {{btcDirection}}</p>
 		
-		<p v-if="ltcDirection=='d'">CloseLongRate:<span style="color:#33f"> {{CloseLongRate}}</span></p>
-		<p v-if="ltcDirection=='k'">CloseShortRate: <span style="color:#33f">{{CloseShortRate}}</span></p>
-		<p v-if="ltcDirection=='d'">当前多仓止损rate是zhiduorate: <span style="color:red">{{zhiDuoRate}}</span></p>
-		<p v-if="ltcDirection=='k'">当前空仓止损rate是zhikongrate:<span style="color:red"> {{zhiKongRate}}</span></p>
+		<p v-if="btcDirection=='d'">btcCloseLongRate:<span style="color:#33f"> {{btcCloseLongRate}}</span></p>
+		<p v-if="btcDirection=='k'">btcCloseShortRate: <span style="color:#33f">{{btcCloseShortRate}}</span></p>
+		<p v-if="btcDirection=='d'">当前多仓止损rate是zhiduorate: <span style="color:red">{{btczhiDuoRate}}</span></p>
+		<p v-if="btcDirection=='k'">当前空仓止损rate是zhikongrate:<span style="color:red"> {{btczhiKongRate}}</span></p>
 		<br>
 		<p>平单委托价格curPlantOrder.price:<span style="color:#33f"> {{curPlantOrder.price}}</span></p>
-		<p>平单止损价格StopPrice:<span style="color:red"> {{StopPrice}}</span></p>
+		<p>平单止损价格btcStopPrice:<span style="color:red"> {{btcStopPrice}}</span></p>
 		<p>提示：{{someTips}}</p>
 		<p>提示：{{someTips2}}</p>
 		<br>
-		<p>hasLost: {{getHasLost()}}</p>	
+		<p>btchasLost: {{getHasLost()}}</p>	
 		<p>step: {{step}}(1.开仓成功。2，平单等待成交。3.发生了撤单，因为止损，已经撤单成功。4.平单完全成交（止盈单或者止损单）)</p>
 		<br>
-		<p>ltcAmount: {{ltcAmount}}</p>,当前止损次数{{calCancelTimes()}}
-		<p>originltcAmount: {{originltcAmount}}</p>
+		<p>btcAmount: {{btcAmount}}</p>,当前止损次数{{calCancelTimes()}}
+		<p>originbtcAmount: {{originbtcAmount}}</p>
 		<br>
 		<p>启动后最大止损次数{{maxC}}<p>
 		<p>设定的止损limit：{{limit}}</p>
@@ -90,7 +90,7 @@ var app = new Vue({
 
 		receiveNotify: false,
 		tp: '',
-		newestOrderTime:'',
+		btcnewestOrderTime:'',
 		inpStep:'',
 		limit:7,
 		oneOrder:'',
@@ -103,28 +103,28 @@ var app = new Vue({
 		tickerOrder:'',
 		curPlantOrder:'',
 		tickerPosition:'',
-		ltcBond:-1,
-		ltcDirection:"d",// "d"&"k"
-		curltcSell:'',
-		curltcBuy:'',
-		ltcAmount:2,
-		originltcAmount:2,
+		btcBond:-1,
+		btcDirection:"d",// "d"&"k"
+		curbtcSell:'',
+		curbtcBuy:'',
+		btcAmount:5,
+		originbtcAmount:5,
 		stop:false,
-		CloseLongRate: 1.002,
+		btcCloseLongRate: 1.002,
 		originlongrate: 1.002,
-		CloseShortRate: 0.998,
+		btcCloseShortRate: 0.998,
 		originshortrate: 0.998,
-		kaiPrice:'',
-		StopPrice:'',
-		zhiDuoRate: 0.998,
+		btckaiPrice:'',
+		btcStopPrice:'',
+		btczhiDuoRate: 0.998,
 		originzhiduorate:0.998,
-		zhiKongRate: 1.002,
+		btczhiKongRate: 1.002,
 		originzhikongrate:1.002,
 		step:0,
 		cancelSuc:'',
-		remain:'',
+		btcremain:'',
 		zaiCancelZhongXialeZhisun:'',
-		saveRemain:'',
+		btcsaveRemain:'',
 		realzhisunPrice:'',
 		realzhisunAmount:'',
 		stopD:'',
@@ -211,27 +211,27 @@ var app = new Vue({
 	methods: {
 		pointOneOrder: function(order){
 			var $this = this;
-			if($this.newestOrderTime===''){
+			if($this.btcnewestOrderTime===''){
 				console.info("指定了新的oneorder,新的时间是："+$this.formatDate(order.create_date)+"旧的时间：空")
 				$this.oneOrder = order;
-				$this.newestOrderTime = order.create_date;
-				window.localStorage.setItem("newestOrderTime",String(order.create_date))
+				$this.btcnewestOrderTime = order.create_date;
+				window.localStorage.setItem("btcnewestOrderTime",String(order.create_date))
 				return true;
-			}else if($this.newestOrderTime>order.create_date){
-				console.info("这个order.create_date < newestOrderTime，不能把它赋给oneOrder，此订单时间是："+order.create_date+"而原订单时间是："+$this.newestOrderTime)
+			}else if($this.btcnewestOrderTime>order.create_date){
+				console.info("这个order.create_date < btcnewestOrderTime，不能把它赋给oneOrder，此订单时间是："+order.create_date+"而原订单时间是："+$this.btcnewestOrderTime)
 				return false;
 			}else{
 				console.info("指定了新的oneorder,新的时间是："+$this.formatDate(order.create_date)+"旧的时间："+$this.formatDate($this.oneOrder.create_date))
 				$this.oneOrder = order;
-				$this.newestOrderTime = order.create_date;
-				window.localStorage.setItem("newestOrderTime",String(order.create_date))
+				$this.btcnewestOrderTime = order.create_date;
+				window.localStorage.setItem("btcnewestOrderTime",String(order.create_date))
 
 				return true;
 			}
 		},
 		confirmOneOrder: function(order){
 			var $this = this;
-			if(order.create_date<$this.newestOrderTime){
+			if(order.create_date<$this.btcnewestOrderTime){
 				return false;
 			}else{
 
@@ -257,7 +257,7 @@ var app = new Vue({
 		},
 		calCancelTimes: function(){
 			var $this = this;
-			var r = $this.ltcAmount/$this.originltcAmount;
+			var r = $this.btcAmount/$this.originbtcAmount;
 			var cancelTime = Math.log(r)*Math.LOG2E
 
 			if(cancelTime>$this.maxC){
@@ -274,21 +274,21 @@ var app = new Vue({
 			}
 		},
 		getHasLost:function(){
-			if(window.localStorage.getItem("hasLost")===null){
-				return "缓存中没有hasLost,崭新的系统还没有过亏损（止损单）"
-			}else if(window.localStorage.getItem("hasLost")==='0'){
+			if(window.localStorage.getItem("btchasLost")===null){
+				return "缓存中没有btchasLost,崭新的系统还没有过亏损（止损单）"
+			}else if(window.localStorage.getItem("btchasLost")==='0'){
 				return "0"
 			}else{
-				return window.localStorage.getItem("hasLost")
+				return window.localStorage.getItem("btchasLost")
 			}
 		},
-		tradeLTC: function(){
+		tradeBTC: function(){
 			var $this = this;
 			var data = $this.tickerData;
 
-			if($this.tickerOrder==''&&$this.ltcBond==0&&$this.step==0){
+			if($this.tickerOrder==''&&$this.btcBond==0&&$this.step==0){
 				if($this.step!=0){
-					console.info("tradeLTC说：我的天呐，这你也能进来？step: "+$this.step);
+					console.info("tradeBTC说：我的天呐，这你也能进来？step: "+$this.step);
 					return;
 				}
 				$this.step = 0.5
@@ -297,7 +297,7 @@ var app = new Vue({
 				return;
 			}
 
-			var dir = $this.ltcDirection;
+			var dir = $this.btcDirection;
 			var basePrice;
 			var givePrice;
 			var type=-1;
@@ -314,13 +314,13 @@ var app = new Vue({
 				console.log("error:dir is "+dir)
 			}
 
-/*			//如果缓存中有不为0的ltcAmount，那么它是真实的ltcAmount
-			var lsltcAmount = window.localStorage.getItem("ltcAmount");
-			if(lsltcAmount!==null && lsltcAmount!=='0'){
-				$this.ltcAmount = parseFloat(lsltcAmount); 
+/*			//如果缓存中有不为0的btcAmount，那么它是真实的btcAmount
+			var lsbtcAmount = window.localStorage.getItem("btcAmount");
+			if(lsbtcAmount!==null && lsbtcAmount!=='0'){
+				$this.btcAmount = parseFloat(lsbtcAmount); 
 			}*/
 			
-			$this.futureTrade(givePrice,type,$this.ltcAmount);
+			$this.futureTrade(givePrice,type,$this.btcAmount);
 		},
 		
 		
@@ -429,39 +429,39 @@ var app = new Vue({
 		},
 		computeLost:function(){
 			var $this = this;
-			if($this.kaiPrice==''){
-				$this.kaiPrice = parseFloat(window.localStorage.getItem("kaiPrice"))
+			if($this.btckaiPrice==''){
+				$this.btckaiPrice = parseFloat(window.localStorage.getItem("btckaiPrice"))
 			}
-			var kaiprice = $this.kaiPrice;
+			var kaiprice = $this.btckaiPrice;
 			var pingprice;
 			var zsprice = $this.realzhisunPrice;
-			var amount = $this.ltcAmount;
-			var remain = $this.saveRemain;
-			if(remain===''){
-				remain = 0;
+			var amount = $this.btcAmount;
+			var btcremain = $this.btcsaveRemain;
+			if(btcremain===''){
+				btcremain = 0;
 			}
 
-			if($this.ltcDirection=='d'){
+			if($this.btcDirection=='d'){
 
-				pingprice = parseFloat((kaiprice * $this.CloseLongRate).toFixed(3));
-				var usd1 = (pingprice - kaiprice)*(amount-remain)*10/kaiprice;//正数
-				var usd2 = (zsprice-kaiprice)*(remain*10)/kaiprice;//负数
+				pingprice = parseFloat((kaiprice * $this.btcCloseLongRate).toFixed(3));
+				var usd1 = (pingprice - kaiprice)*(amount-btcremain)*100/kaiprice;//正数
+				var usd2 = (zsprice-kaiprice)*(btcremain*100)/kaiprice;//负数
 				
-			}else if($this.ltcDirection=='k'){
-				pingprice = parseFloat((kaiprice * $this.CloseShortRate).toFixed(3));
-				var usd1 = -(pingprice - kaiprice)*(amount-remain)*10/kaiprice;//正数
-				var usd2 = -(zsprice-kaiprice)*(remain*10)/kaiprice;//负数
+			}else if($this.btcDirection=='k'){
+				pingprice = parseFloat((kaiprice * $this.btcCloseShortRate).toFixed(3));
+				var usd1 = -(pingprice - kaiprice)*(amount-btcremain)*100/kaiprice;//正数
+				var usd2 = -(zsprice-kaiprice)*(btcremain*100)/kaiprice;//负数
 
 			}
 			var usd = usd1 + usd2;//不一定是正的还是负的
 			var bit = usd1/pingprice + usd2/zsprice;//不一定是正的还是负的
 			
-			if(window.localStorage.getItem("hasLost")===null){
-				window.localStorage.setItem("hasLost",String(bit));
+			if(window.localStorage.getItem("btchasLost")===null){
+				window.localStorage.setItem("btchasLost",String(bit));
 			}else{
-				var prelost = parseFloat(window.localStorage.getItem("hasLost"));
+				var prelost = parseFloat(window.localStorage.getItem("btchasLost"));
 				var l = prelost + bit;
-				window.localStorage.setItem("hasLost",String(l));
+				window.localStorage.setItem("btchasLost",String(l));
 
 			}
 			
@@ -469,26 +469,90 @@ var app = new Vue({
 		},
 		init:function(){
 			var $this = this;
-			window.localStorage.setItem("hasLost",'0');
-			$this.hasLost = 0;
-			window.localStorage.setItem("zhiDuoRate",String($this.originzhiduorate))
-			$this.zhiDuoRate = $this.originzhiduorate;
-			window.localStorage.setItem("zhiKongRate",String($this.originzhikongrate))
-			$this.zhiKongRate = $this.originzhikongrate;
-			window.localStorage.setItem("CloseShortRate",String($this.originshortrate))
-			$this.CloseShortRate = $this.originshortrate;
-			window.localStorage.setItem("CloseLongRate",String($this.originlongrate))
-			$this.CloseLongRate = $this.originlongrate;
+			window.localStorage.setItem("btchasLost",'0');
+			$this.btchasLost = 0;
+			window.localStorage.setItem("btczhiDuoRate",String($this.originzhiduorate))
+			$this.btczhiDuoRate = $this.originzhiduorate;
+			window.localStorage.setItem("btczhiKongRate",String($this.originzhikongrate))
+			$this.btczhiKongRate = $this.originzhikongrate;
+			window.localStorage.setItem("btcCloseShortRate",String($this.originshortrate))
+			$this.btcCloseShortRate = $this.originshortrate;
+			window.localStorage.setItem("btcCloseLongRate",String($this.originlongrate))
+			$this.btcCloseLongRate = $this.originlongrate;
 
 		},
 		computeShouldRate:function(price_avg){
 			var $this = this;
-			if(window.localStorage.getItem("hasLost")===null){
+			if(window.localStorage.getItem("btchasLost")===null){
 				return;
-			}else if(window.localStorage.getItem("hasLost")==='0'){
+			}else if(window.localStorage.getItem("btchasLost")==='0'){
 				return;
 			}
-			var hasLost = parseFloat(window.localStorage.getItem("hasLost"));
+			var btchasLost = parseFloat(window.localStorage.getItem("btchasLost"));
+			if(btchasLost>0){
+				var curTime = new Date().getTime();
+				
+				//debug 20:26:26
+				$this.someTips = "虽然上次发生了止损，但是收益已经补回了前面所有损失，收益是："+btchasLost+ ' ' +$this.formatDate(curTime) ;
+				$this.init();
+				return;
+			}
+			var r = $this.btcAmount/$this.originbtcAmount;
+			var cancelTime = Math.log(r)*Math.LOG2E
+			var desRate = 2-Math.sqrt(cancelTime)/4
+
+			var destination = -btchasLost*desRate;
+			$this.destination = destination;
+			var btcAmount = $this.btcAmount;
+			if($this.btcDirection=='d'){
+				var duorate;
+				//$this.btcAmount*100/price_avg*(price_avg*duorate-price_avg)/price_avg*duorate=destination
+				duorate = 100*btcAmount/(100*btcAmount - price_avg*destination );
+				$this.btcCloseLongRate = duorate;
+				window.localStorage.setItem("btcCloseLongRate",String(duorate))
+				if(duorate<1.001){
+					$this.btczhiDuoRate = 0.999*0.9991;
+					console.info("duorate太小了，这样的话止损率不能太小，否则触发止损过于容易，产生震荡崩塌")
+				}else{
+					$this.btczhiDuoRate = (1-(duorate-1))*0.9991;
+				}
+				//震荡应该是由于推送的price不准确和过低的duorate共同导致的
+				
+				
+				window.localStorage.setItem("btczhiDuoRate",String($this.btczhiDuoRate))
+				console.info("computeShouldRate: 止盈率,止损率:"+$this.btcCloseLongRate+', '+$this.btczhiDuoRate)
+
+
+
+			}else if($this.btcDirection=='k'){
+				var kongrate;
+				//$this.btcAmount*100/price_avg*(price_avg*duorate-price_avg)/price_avg*duorate=destination
+				kongrate = 100*btcAmount/(100*btcAmount + price_avg*destination );
+				$this.btcCloseShortRate = kongrate;
+				window.localStorage.setItem("btcCloseShortRate",String(kongrate))
+				if(kongrate>0.999){
+					$this.btczhiKongRate = 1.001*1.0009;
+					console.info("kongrate太小(大)了，这样的话止损率不能太小，否则触发止损过于容易，产生震荡崩塌")
+				}else{
+					$this.btczhiKongRate = (1-kongrate+1)*1.0009;
+				}
+				//震荡应该是由于推送的price不准确导致的
+				
+
+				window.localStorage.setItem("btczhiKongRate",String($this.btczhiKongRate))
+				console.info("computeShouldRate: 止盈率,止损率:"+$this.btcCloseShortRate+', '+$this.btczhiKongRate)
+			}
+			
+
+		},
+		computeShouldAmount:function(price_avg){
+			var $this = this;
+			if(window.localStorage.getItem("btchasLost")===null){
+				return;
+			}else if(window.localStorage.getItem("btchasLost")==='0'){
+				return;
+			}
+			var hasLost = parseFloat(window.localStorage.getItem("btchasLost"));
 			if(hasLost>0){
 				var curTime = new Date().getTime();
 				
@@ -497,52 +561,61 @@ var app = new Vue({
 				$this.init();
 				return;
 			}
-			var r = $this.ltcAmount/$this.originltcAmount;
+			/*var r = $this.ltcAmount/$this.originltcAmount;
 			var cancelTime = Math.log(r)*Math.LOG2E
-			var desRate = 2-Math.sqrt(cancelTime)/4
+			var desRate = 2-Math.sqrt(cancelTime)/4*/
+			var next = $this.btcAmount*2
+			var r = next/$this.originbtcAmount;
+			var c = Math.log(r)*Math.LOG2E;
+
+			//下次的目标收益率
+			var desRate = 2-Math.sqrt(c)/4
 
 			var destination = -hasLost*desRate;
 			$this.destination = destination;
-			var ltcAmount = $this.ltcAmount;
-			if($this.ltcDirection=='d'){
-				var duorate;
-				//$this.ltcAmount*100/price_avg*(price_avg*duorate-price_avg)/price_avg*duorate=destination
-				duorate = 10*ltcAmount/(10*ltcAmount - price_avg*destination );
-				$this.CloseLongRate = duorate;
-				window.localStorage.setItem("CloseLongRate",String(duorate))
-				if(duorate<1.001){
-					$this.zhiDuoRate = 0.999*0.9991;
-					console.info("duorate太小了，这样的话止损率不能太小，否则触发止损过于容易，产生震荡崩塌")
-				}else{
-					$this.zhiDuoRate = (1-(duorate-1))*0.9991;
-				}
-				//震荡应该是由于推送的price不准确导致的
-				
-				
-				window.localStorage.setItem("zhiDuoRate",String($this.zhiDuoRate))
-				console.info("computeShouldRate: 止盈率,止损率:"+$this.CloseLongRate+', '+$this.zhiDuoRate)
-
-
-
-			}else if($this.ltcDirection=='k'){
-				var kongrate;
-				//$this.ltcAmount*100/price_avg*(price_avg*duorate-price_avg)/price_avg*duorate=destination
-				kongrate = 10*ltcAmount/(10*ltcAmount + price_avg*destination );
-				$this.CloseShortRate = kongrate;
-				window.localStorage.setItem("CloseShortRate",String(kongrate))
-				if(kongrate>0.999){
-					$this.zhiKongRate = 1.001*1.0009;
-					console.info("kongrate太小(大)了，这样的话止损率不能太小，否则触发止损过于容易，产生震荡崩塌")
-				}else{
-					$this.zhiKongRate = (1-kongrate+1)*1.0009;
-				}
-				//震荡应该是由于推送的price不准确导致的
-				
-
-				window.localStorage.setItem("zhiKongRate",String($this.zhiKongRate))
-				console.info("computeShouldRate: 止盈率,止损率:"+$this.CloseShortRate+', '+$this.zhiKongRate)
-			}
 			
+			var duorate = $this.originlongrate
+			var kongrate = $this.originshortrate
+			var amount
+			if($this.btcDirection=='d'){
+
+				amount = Math.ceil(price_avg*destination*duorate/(10*duorate-10))
+
+			}else if($this.btcDirection=='k'){
+				
+				amount = Math.ceil(price_avg*destination*kongrate/(10-10*kongrate))
+
+			}
+
+			var once = $this.cal($this.limit);
+			if(amount>once*$this.originbtcAmount){
+
+				$this.btcAmount = $this.originbtcAmount;
+				window.localStorage.setItem("btcAmount",String($this.originbtcAmount))
+				console.log("heartbreak")
+				var l = window.localStorage.getItem("btchasLost")
+				var hb;
+				if(window.localStorage.getItem("btcheartbreakLost")===null){
+					window.localStorage.setItem("btcheartbreakLost", l);
+				}else{
+					hb = window.localStorage.getItem("btcheartbreakLost")
+					hb = hb + ', ' + l;
+					window.localStorage.setItem("btcheartbreakLost", hb)
+				}
+				
+				window.localStorage.setItem("btchasLost",'0');
+				$this.btchasLost = 0;
+
+				return;
+			}
+			if(amount<$this.originbtcAmount){
+				amount = $this.originbtcAmount
+			}
+			$this.btcAmount = amount;
+			window.localStorage.setItem("btcAmount",String(amount))
+			
+			
+			console.info("computeShouldAmount: "+$this.btcAmount)
 
 		},
 		onMessage: function(e) {
@@ -564,7 +637,7 @@ var app = new Vue({
 								
 
 
-								if(order.symbol == 'btc_usd'){
+								if(order.symbol == 'ltc_usd'){
 									continue;
 								}
 								if(order.gundan === true){
@@ -576,11 +649,11 @@ var app = new Vue({
 									console.info("已经撤销的单你进来干啥 type,amount:"+order.type+' '+order.amount)
 								}
 
-								var t = $this.newestOrderTime;
+								var t = $this.btcnewestOrderTime;
 								if(t==''){
-									$this.newestOrderTime = order.create_date;
-									window.localStorage.setItem("newestOrderTime",String(order.create_date))
-									console.info("...............是空................设置了新的 newestOrderTime和oneorder ")
+									$this.btcnewestOrderTime = order.create_date;
+									window.localStorage.setItem("btcnewestOrderTime",String(order.create_date))
+									console.info("...............是空................设置了新的 btcnewestOrderTime和oneorder ")
 
 									$this.oneOrder = order;
 
@@ -589,10 +662,10 @@ var app = new Vue({
 									continue;
 								}else if(order.create_date>t){
 									
-									$this.newestOrderTime = order.create_date;
-									window.localStorage.setItem("newestOrderTime",String(order.create_date))
+									$this.btcnewestOrderTime = order.create_date;
+									window.localStorage.setItem("btcnewestOrderTime",String(order.create_date))
 									if(order.create_date>t){
-										console.info("................是大于...............设置了新的 newestOrderTime和oneorder order.type: "+order.type+", order.status: "+order.status+", create_date: "+order.create_date)
+										console.info("................是大于...............设置了新的 btcnewestOrderTime和oneorder order.type: "+order.type+", order.status: "+order.status+", create_date: "+order.create_date)
 									}
 									
 									$this.oneOrder = order;
@@ -644,8 +717,8 @@ var app = new Vue({
 									}
 
 									if(order.status == 2){
-										$this.kaiPrice = order.price_avg;
-										window.localStorage.setItem("kaiPrice", String(order.price_avg))
+										$this.btckaiPrice = order.price_avg;
+										window.localStorage.setItem("btckaiPrice", String(order.price_avg))
 
 										if($this.step != 0.5 && $this.step != 1){
 											console.info("orderinfo msg 开单完全成交时说： step不是0.5也不是1 ！，还不能进行下一步，当前step是："+$this.step)
@@ -653,38 +726,38 @@ var app = new Vue({
 										}
 										$this.step = 1;
 										console.log("step: 1, 开单全成交了，将要算算平仓的费率，算完去下平单,有时候开单没有设置新newestordertime的日志，尤其是刚下完止损单的时候，我打印一下开单的人权做个比较，order.create_date: "+order.create_date)
-										$this.computeShouldRate(order.price_avg);
+										//$this.computeShouldRate(order.price_avg);
 
 										//...................................handle ls
-										/*var lsCloseLongRate = window.localStorage.getItem("CloseLongRate")
-										var lsCloseShortRate = window.localStorage.getItem("CloseShortRate")
-										var lszhiDuoRate = window.localStorage.getItem("zhiDuoRate")
-										var lszhiKongRate = window.localStorage.getItem("zhiKongRate")
-										if(lsCloseLongRate!==null && parseFloat(lsCloseLongRate)!=$this.originlongrate){
-											$this.CloseLongRate = parseFloat(lsCloseLongRate);
+										/*var lsbtcCloseLongRate = window.localStorage.getItem("btcCloseLongRate")
+										var lsbtcCloseShortRate = window.localStorage.getItem("btcCloseShortRate")
+										var lsbtczhiDuoRate = window.localStorage.getItem("btczhiDuoRate")
+										var lsbtczhiKongRate = window.localStorage.getItem("btczhiKongRate")
+										if(lsbtcCloseLongRate!==null && parseFloat(lsbtcCloseLongRate)!=$this.originlongrate){
+											$this.btcCloseLongRate = parseFloat(lsbtcCloseLongRate);
 										}
-										if(lsCloseShortRate!==null && parseFloat(lsCloseShortRate)!=$this.originshortrate){
-											$this.CloseShortRate = parseFloat(lsCloseShortRate);
+										if(lsbtcCloseShortRate!==null && parseFloat(lsbtcCloseShortRate)!=$this.originshortrate){
+											$this.btcCloseShortRate = parseFloat(lsbtcCloseShortRate);
 										}
-										if(lszhiDuoRate!==null && parseFloat(lszhiDuoRate)!=$this.originzhiduorate){
-											$this.zhiDuoRate = parseFloat(lszhiDuoRate);
+										if(lsbtczhiDuoRate!==null && parseFloat(lsbtczhiDuoRate)!=$this.originzhiduorate){
+											$this.btczhiDuoRate = parseFloat(lsbtczhiDuoRate);
 										}
-										if(lszhiKongRate!==null && parseFloat(lszhiKongRate)!=$this.originzhikongrate){
-											$this.zhiKongRate = parseFloat(lszhiKongRate);
+										if(lsbtczhiKongRate!==null && parseFloat(lsbtczhiKongRate)!=$this.originzhikongrate){
+											$this.btczhiKongRate = parseFloat(lsbtczhiKongRate);
 										}*/
 										//handle ls over................................
 
 
 										if(order.type==1){
-											var p = parseFloat((order.price_avg * $this.CloseLongRate).toFixed(3));
+											var p = parseFloat((order.price_avg * $this.btcCloseLongRate).toFixed(3));
 											$this.futureTrade(p, 3, order.deal_amount);
-											$this.StopPrice = parseFloat((order.price_avg * $this.zhiDuoRate).toFixed(3));
+											$this.btcStopPrice = parseFloat((order.price_avg * $this.btczhiDuoRate).toFixed(3));
 										}else if(order.type==2){
-											var p = parseFloat((order.price_avg * $this.CloseShortRate).toFixed(3));
+											var p = parseFloat((order.price_avg * $this.btcCloseShortRate).toFixed(3));
 											$this.futureTrade(p, 4, order.deal_amount);
-											$this.StopPrice = parseFloat((order.price_avg * $this.zhiKongRate).toFixed(3));
+											$this.btcStopPrice = parseFloat((order.price_avg * $this.btczhiKongRate).toFixed(3));
 										}
-										window.localStorage.setItem("StopPrice", String($this.StopPrice));
+										window.localStorage.setItem("btcStopPrice", String($this.btcStopPrice));
 										
 										order.gundan = true;
 										
@@ -706,9 +779,9 @@ var app = new Vue({
 
 									
 
-									if($this.StopPrice===''){
+									if($this.btcStopPrice===''){
 										//刷新后没有这个price
-										$this.StopPrice = parseFloat(window.localStorage.getItem("StopPrice"));
+										$this.btcStopPrice = parseFloat(window.localStorage.getItem("btcStopPrice"));
 									}
 									
 
@@ -724,8 +797,8 @@ var app = new Vue({
 
 									}
 									if(order.status==1||order.status==0){
-										$this.remain = order.amount-order.deal_amount;
-										window.localStorage.setItem("remain",String($this.remain))
+										$this.btcremain = order.amount-order.deal_amount;
+										window.localStorage.setItem("btcremain",String($this.btcremain))
 									}
 									if(order.status==2){
 
@@ -741,7 +814,6 @@ var app = new Vue({
 										//我觉得用在这里是合适的，notify是为了通知止损，而且只有step=2才能通知，现在step都是4了，反正他通知一次就足够了,撤单成不成功跟他没关系，他通知到了就ok
 										$this.receiveNotify = false;
 										//
-
 										console.log("step: 4, 卧槽牛逼，平单全成交了，我来看看是止盈单还是止损单吧...");
 
 
@@ -754,55 +826,32 @@ var app = new Vue({
 											$this.computeLost();
 
 											$this.realzhisunAmount = order.deal_amount;
-											var lastAmount = $this.ltcAmount;
+											var lastAmount = $this.btcAmount;
 
 											var once = $this.cal($this.limit);
 											
-											if($this.ltcAmount>=once*$this.originltcAmount){
+											
+											if(parseFloat(window.localStorage.getItem("btchasLost"))>=0){
+												$this.btcAmount = $this.originbtcAmount;
+												var curTime = new Date().getTime();
 
-												$this.ltcAmount = $this.originltcAmount
-												
-												var l = window.localStorage.getItem("hasLost")
-												var hb;
-												if(window.localStorage.getItem("heartbreakLost")===null){
-													window.localStorage.setItem("heartbreakLost", l);
-												}else{
-													hb = window.localStorage.getItem("heartbreakLost")
-													hb = hb + ', ' + l;
-													window.localStorage.setItem("heartbreakLost", hb)
-												}
-												
-												window.localStorage.setItem("hasLost",'0');
-												$this.hasLost = 0;
-												window.localStorage.setItem("zhiDuoRate",String($this.originzhiduorate))
-												$this.zhiDuoRate = $this.originzhiduorate;
-												window.localStorage.setItem("zhiKongRate",String($this.originzhikongrate))
-												$this.zhiKongRate = $this.originzhikongrate;
-												window.localStorage.setItem("CloseShortRate",String($this.originshortrate))
-												$this.CloseShortRate = $this.originshortrate;
-												window.localStorage.setItem("CloseLongRate",String($this.originlongrate))
-												$this.CloseLongRate = $this.originlongrate;
+												//debug 20:26:24
+												$this.someTips2 = "收益>=0："+btchasLost+ ' ' +$this.formatDate(curTime) +',不再增加amount以减小风险,';
 											}else{
-												if(parseFloat(window.localStorage.getItem("hasLost"))>=0){
-													$this.ltcAmount = $this.originltcAmount;
-													var curTime = new Date().getTime();
-
-													//debug 20:26:24
-													$this.someTips2 = "收益>=0："+hasLost+ ' ' +$this.formatDate(curTime) +',不再增加amount以减小风险,';
-												}else{
-													$this.ltcAmount = $this.ltcAmount*2;
-												}
-												
+												//$this.btcAmount = $this.btcAmount*2;
+												$this.computeShouldAmount(order.price_avg);
 											}
+												
 											
-											window.localStorage.setItem("ltcAmount",String($this.ltcAmount))
 											
-											order.type==3 ? $this.ltcDirection = 'k' : $this.ltcDirection = 'd'; 
-											window.localStorage.setItem("ltcDirection",$this.ltcDirection)
+											window.localStorage.setItem("btcAmount",String($this.btcAmount))
+											
+											order.type==3 ? $this.btcDirection = 'k' : $this.btcDirection = 'd'; 
+											window.localStorage.setItem("btcDirection",$this.btcDirection)
 
 											
-											var hasLost = parseFloat(window.localStorage.getItem("hasLost"))
-											$this.hasLost = hasLost;
+											var btchasLost = parseFloat(window.localStorage.getItem("btchasLost"))
+											$this.btchasLost = btchasLost;
 
 											$this.zaiCancelZhongXialeZhisun = false;
 											
@@ -811,36 +860,36 @@ var app = new Vue({
 											console.info("之前这块老出问题，我查查是哪个sb捣乱：")
 											console.log("order.gundan: "+order.gundan+", order.amount: "+order.amount+", order.type: "+order.type+", order.create_date: "+$this.formatDate(order.create_date));
 											console.log("step: 4.1, 止盈单成交了，叼叼叼，666");
-											if(window.localStorage.getItem("hasLost")!==null){
-												window.localStorage.setItem("hasLost",'0');
+											if(window.localStorage.getItem("btchasLost")!==null){
+												window.localStorage.setItem("btchasLost",'0');
 											}
 											
-											$this.hasLost = 0;
-											//window.localStorage.setItem("hasLost",'0');
+											$this.btchasLost = 0;
+											//window.localStorage.setItem("btchasLost",'0');
 											
-											$this.ltcAmount = $this.originltcAmount ;
-											window.localStorage.setItem("ltcAmount",String($this.ltcAmount))
+											$this.btcAmount = $this.originbtcAmount ;
+											window.localStorage.setItem("btcAmount",String($this.btcAmount))
 											
-											$this.CloseLongRate = $this.originlongrate;
-											window.localStorage.setItem("CloseLongRate",String($this.originlongrate))
+											$this.btcCloseLongRate = $this.originlongrate;
+											window.localStorage.setItem("btcCloseLongRate",String($this.originlongrate))
 											
-											$this.CloseShortRate = $this.originshortrate;
-											window.localStorage.setItem("CloseShortRate",String($this.originshortrate))
+											$this.btcCloseShortRate = $this.originshortrate;
+											window.localStorage.setItem("btcCloseShortRate",String($this.originshortrate))
 											
-											$this.zhiDuoRate = $this.originzhiduorate;
-											window.localStorage.setItem("zhiDuoRate",String($this.zhiDuoRate))
+											$this.btczhiDuoRate = $this.originzhiduorate;
+											window.localStorage.setItem("btczhiDuoRate",String($this.btczhiDuoRate))
 											
-											$this.zhiKongRate = $this.originzhikongrate;
-											window.localStorage.setItem("zhiKongRate",String($this.zhiKongRate))
+											$this.btczhiKongRate = $this.originzhikongrate;
+											window.localStorage.setItem("btczhiKongRate",String($this.btczhiKongRate))
 											
-											order.type==3 ? $this.ltcDirection = 'd' : $this.ltcDirection = 'k';
-											window.localStorage.setItem("ltcDirection",$this.ltcDirection)
+											order.type==3 ? $this.btcDirection = 'd' : $this.btcDirection = 'k';
+											window.localStorage.setItem("btcDirection",$this.btcDirection)
 
-											window.localStorage.setItem("StopPrice",'');
-											$this.StopPrice = '';
+											window.localStorage.setItem("btcStopPrice",'');
+											$this.btcStopPrice = '';
 
-											$this.remain = '';
-											window.localStorage.setItem("remain",String($this.remain))
+											$this.btcremain = '';
+											window.localStorage.setItem("btcremain",String($this.btcremain))
 										}
 										
 										$this.step = 0;
@@ -849,9 +898,9 @@ var app = new Vue({
 
 										/*if($this.stop==true){
 											//止损单
-											order.type==3 ? $this.ltcDirection = 'k' : $this.ltcDirection = 'd'; 
+											order.type==3 ? $this.btcDirection = 'k' : $this.btcDirection = 'd'; 
 										}else{
-											order.type==3 ? $this.ltcDirection = 'd' : $this.ltcDirection = 'k';
+											order.type==3 ? $this.btcDirection = 'd' : $this.btcDirection = 'k';
 										}*/
 										order.gundan = true;
 										
@@ -968,35 +1017,38 @@ var app = new Vue({
 							$this.stopD === true ? $this.stopD = false : ($this.stopK === true ? $this.stopK = false:console.log("WTF?"));
 
 							$this.step = 3;
+
+
+							
 							console.info("step is 3,撤单成功了，将要下止损单")
 
 							var type;
 							var rate;
-							if($this.ltcDirection=='d'){
+							if($this.btcDirection=='d'){
 								type=3;
 								rate=0.99;
-							}else if($this.ltcDirection=='k'){
+							}else if($this.btcDirection=='k'){
 								type=4;
 								rate=1.01
 							}
 							
-							//保存remain
+							//保存btcremain
 
-							$this.saveRemain = $this.remain;
-							window.localStorage.setItem("saveRemain", String($this.remain))
+							$this.btcsaveRemain = $this.btcremain;
+							window.localStorage.setItem("btcsaveRemain", String($this.btcremain))
 
-							if($this.StopPrice===''){
+							if($this.btcStopPrice===''){
 								//刷新后没有这个price
-								$this.StopPrice = parseFloat(window.localStorage.getItem("StopPrice"));
+								$this.btcStopPrice = parseFloat(window.localStorage.getItem("btcStopPrice"));
 							}
-							if($this.remain===''){
+							if($this.btcremain===''){
 								//刷新后没有这个price
-								$this.remain = parseFloat(window.localStorage.getItem("remain"));
+								$this.btcremain = parseFloat(window.localStorage.getItem("btcremain"));
 							}
 
-							var r = $this.remain;
+							var r = $this.btcremain;
 							var t = type;
-							var p = $this.StopPrice*rate;
+							var p = $this.btcStopPrice*rate;
 							var zhisunOrder = {
 								type: t,
 								amount: r,
@@ -1005,8 +1057,8 @@ var app = new Vue({
 							$this.zhisunOrder = zhisunOrder;
 
 							//下面下的单一定成交
-							console.info("下止损单前的平仓量remain： "+$this.remain+", type: "+type)
-							$this.futureTrade($this.StopPrice*rate,type,$this.remain);
+							console.info("下止损单前的平仓量btcremain： "+$this.btcremain+", type: "+type)
+							$this.futureTrade($this.btcStopPrice*rate,type,$this.btcremain);
 							console.info("发出了止损单指令")
 
 
@@ -1022,14 +1074,14 @@ var app = new Vue({
 							console.info("stopD:"+$this.stopD+", stopK:"+$this.stopK)
 						}
 						
-					}else if(msg['channel']=="ok_sub_futureusd_ltc_ticker_quarter"){
+					}else if(msg['channel']=="ok_sub_futureusd_btc_ticker_quarter"){
 						var data = msg['data'];
 						$this.tickerData = data;
 
 						
 
 
-					}else if(msg['channel']=="ok_sub_futureusd_ltc_trade_quarter"){
+					}else if(msg['channel']=="ok_sub_futureusd_btc_trade_quarter"){
 						//console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
 						var len = msg['data'].length;
 						var data = msg['data'][len-1];
@@ -1056,22 +1108,22 @@ var app = new Vue({
 					else if(msg['channel']=="ok_futureusd_userinfo"){
 						var data = msg['data'];
 						if(data.result==true){
-							var objLTCInfo = data['info']['ltc']
+							var objBTCInfo = data['info']['btc']
 							var quarterExist = false;
-							if(objLTCInfo['contracts'].length == 0){
-								$this.ltcBond = 0;
+							if(objBTCInfo['contracts'].length == 0){
+								$this.btcBond = 0;
 							}
-							for(var i in objLTCInfo['contracts']){
-								if(objLTCInfo['contracts'][i]['contract_type']=='quarter'){
+							for(var i in objBTCInfo['contracts']){
+								if(objBTCInfo['contracts'][i]['contract_type']=='quarter'){
 									quarterExist = true;
-									$this.ltcBond = objLTCInfo['contracts'][i]['bond']
-									//console.log("ltc bond get: "+$this.ltcBond)
+									$this.btcBond = objBTCInfo['contracts'][i]['bond']
+									//console.log("btc bond get: "+$this.btcBond)
 									//console.log("step: "+$this.step)
 
 								}
 							}
 							if(quarterExist==false){
-								$this.ltcBond = 0;
+								$this.btcBond = 0;
 								console.info("没有也等于0了")
 							}
 						}else{
@@ -1102,11 +1154,11 @@ var app = new Vue({
 
 					}else if(msg[i]['channel']=="ok_sub_futureusd_trades"){
 						var data = msg[i]['data'];
-						if(data.contract_name.indexOf("LTC")==0){
+						if(data.contract_name.indexOf("BTC")==0){
 							if(data.type==3||data.type==4){
 								if(data.status==1||data.status==0){
-									$this.remain = data.amount - data.deal_amount;
-									window.localStorage.setItem("remain",String($this.remain))
+									$this.btcremain = data.amount - data.deal_amount;
+									window.localStorage.setItem("btcremain",String($this.btcremain))
 								}
 							}
 						}
@@ -1200,11 +1252,11 @@ var app = new Vue({
 			$this.connected++;
 			var str = "{'event':'addChannel','channel':'"+$this.subKline+"'}"
 
-			//订阅ltc合约行情，为了买一和卖一价格，作为baseprice
-			var strTicker = "{'event':'addChannel','channel':'ok_sub_futureusd_ltc_ticker_quarter'}"
+			//订阅btc合约行情，为了买一和卖一价格，作为baseprice
+			var strTicker = "{'event':'addChannel','channel':'ok_sub_futureusd_btc_ticker_quarter'}"
 
 			//订阅大盘交易信息，为了判断是否破止损价
-			var strDeal = "{'event':'addChannel','channel':'ok_sub_futureusd_ltc_trade_quarter'}"
+			var strDeal = "{'event':'addChannel','channel':'ok_sub_futureusd_btc_trade_quarter'}"
 			
 			$this.doSend(str);
 			$this.doSend(strTicker);
@@ -1276,11 +1328,11 @@ var app = new Vue({
 			var $this = this;
 			var okCoinWebSocket = $this.okCoinWebSocket;
 			/*var str = "api_key=" + okCoinWebSocket.api_key + "&contract_type=quarter&current_page=1&order_id=" + orderId + "&page_length=1&secret_key=" + okCoinWebSocket.secret_key + "&status=1&symbol=btc_usd"*/
-			var str = "api_key=" + okCoinWebSocket.api_key + "&contract_type=quarter&current_page=1&order_id=" + orderId + "&page_length=50&status=1&symbol=ltc_usd&secret_key=" + okCoinWebSocket.secret_key
+			var str = "api_key=" + okCoinWebSocket.api_key + "&contract_type=quarter&current_page=1&order_id=" + orderId + "&page_length=50&status=1&symbol=btc_usd&secret_key=" + okCoinWebSocket.secret_key
 
 			var sign = MD5(str);
 			$this.doSend("{'event': 'addChannel','channel': 'ok_futureusd_orderinfo','parameters': {'api_key': '"
-					+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'ltc_usd','order_id': '" + orderId
+					+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'btc_usd','order_id': '" + orderId
 					+ "','contract_type': 'quarter','status':'1','current_page':'1','page_length':'50'}}");
 		},
 		//合约下单
@@ -1291,10 +1343,10 @@ var app = new Vue({
 			$this.sendTime = new Date()
 			var okCoinWebSocket = $this.okCoinWebSocket;
 			var str = "amount="+ amount +"&api_key=" + okCoinWebSocket.api_key + 
-					"&contract_type=quarter&lever_rate="+lv+"&match_price=0&price=" + price + "&symbol=ltc_usd&type="+ type +"&secret_key=" + okCoinWebSocket.secret_key
+					"&contract_type=quarter&lever_rate="+lv+"&match_price=0&price=" + price + "&symbol=btc_usd&type="+ type +"&secret_key=" + okCoinWebSocket.secret_key
 	
 			var sign = MD5(str);
-			$this.doSend("{'event': 'addChannel','channel':'ok_futureusd_trade','parameters': {'api_key': '"+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'ltc_usd','contract_type': 'quarter','amount': "+ amount +",'price': "+price+",'type': "+type+",'match_price': '0','lever_rate':" +lv+"}}");
+			$this.doSend("{'event': 'addChannel','channel':'ok_futureusd_trade','parameters': {'api_key': '"+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'btc_usd','contract_type': 'quarter','amount': "+ amount +",'price': "+price+",'type': "+type+",'match_price': '0','lever_rate':" +lv+"}}");
 			
 		},
 		//撤单
@@ -1302,9 +1354,9 @@ var app = new Vue({
 			var $this = this;
 			var okCoinWebSocket = $this.okCoinWebSocket;
 			var sign = MD5("api_key=" + okCoinWebSocket.api_key + "&contract_type=quarter&order_id=" + orderId
-					+ "&symbol=ltc_usd&secret_key=" + okCoinWebSocket.secret_key);
+					+ "&symbol=btc_usd&secret_key=" + okCoinWebSocket.secret_key);
 			$this.doSend("{'event': 'addChannel','channel': 'ok_futureusd_cancel_order','parameters': {'api_key': '"
-					+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'ltc_usd','order_id': '" + orderId
+					+ okCoinWebSocket.api_key + "','sign': '" + sign + "','symbol': 'btc_usd','order_id': '" + orderId
 					+ "','contract_type': 'quarter'}}");
 		},
 		futurePositions: function() {
@@ -1336,41 +1388,41 @@ var app = new Vue({
 			  	$this[i] = window.localStorage[i];
 			}*/
 			var ls = window.localStorage;
-			if(ls.getItem('ltcDirection')!==null){
-				$this.ltcDirection = ls['ltcDirection'];
+			if(ls.getItem('btcDirection')!==null){
+				$this.btcDirection = ls['btcDirection'];
 			}
-			if(ls.getItem('StopPrice')!==null){
-				$this.StopPrice = parseFloat(ls['StopPrice']);
+			if(ls.getItem('btcStopPrice')!==null){
+				$this.btcStopPrice = parseFloat(ls['btcStopPrice']);
 			}
-			if(ls.getItem('remain')!==null){
-				$this.remain = parseFloat(ls['remain']);
+			if(ls.getItem('btcremain')!==null){
+				$this.btcremain = parseFloat(ls['btcremain']);
 			}
-			if(ls.getItem('CloseLongRate')!==null){
-				$this.CloseLongRate = parseFloat(ls['CloseLongRate']);
+			if(ls.getItem('btcCloseLongRate')!==null){
+				$this.btcCloseLongRate = parseFloat(ls['btcCloseLongRate']);
 			}
-			if(ls.getItem('CloseShortRate')!==null){
-				$this.CloseShortRate = parseFloat(ls['CloseShortRate']);
+			if(ls.getItem('btcCloseShortRate')!==null){
+				$this.btcCloseShortRate = parseFloat(ls['btcCloseShortRate']);
 			}
-			if(ls.getItem('zhiDuoRate')!==null){
-				$this.zhiDuoRate = parseFloat(ls['zhiDuoRate']);
+			if(ls.getItem('btczhiDuoRate')!==null){
+				$this.btczhiDuoRate = parseFloat(ls['btczhiDuoRate']);
 			}
-			if(ls.getItem('zhiKongRate')!==null){
-				$this.zhiKongRate = parseFloat(ls['zhiKongRate']);
+			if(ls.getItem('btczhiKongRate')!==null){
+				$this.btczhiKongRate = parseFloat(ls['btczhiKongRate']);
 			}
-			if(ls.getItem('ltcAmount')!==null){
-				$this.ltcAmount = parseFloat(ls['ltcAmount']);
+			if(ls.getItem('btcAmount')!==null){
+				$this.btcAmount = parseFloat(ls['btcAmount']);
 			}
-			if(ls.getItem('hasLost')!==null){
-				$this.hasLost = parseFloat(ls['hasLost']);
+			if(ls.getItem('btchasLost')!==null){
+				$this.btchasLost = parseFloat(ls['btchasLost']);
 			}
-			if(ls.getItem('kaiPrice')!==null){
-				$this.kaiPrice = parseFloat(ls['kaiPrice']);
+			if(ls.getItem('btckaiPrice')!==null){
+				$this.btckaiPrice = parseFloat(ls['btckaiPrice']);
 			}
-			if(ls.getItem('saveRemain')!==null){
-				$this.saveRemain = parseFloat(ls['saveRemain']);
+			if(ls.getItem('btcsaveRemain')!==null){
+				$this.btcsaveRemain = parseFloat(ls['btcsaveRemain']);
 			}
-			if(ls.getItem('newestOrderTime')!==null){
-				$this.newestOrderTime = parseInt(ls['newestOrderTime']);
+			if(ls.getItem('btcnewestOrderTime')!==null){
+				$this.btcnewestOrderTime = parseInt(ls['btcnewestOrderTime']);
 			}
 			
 		},
@@ -1380,7 +1432,7 @@ var app = new Vue({
 				console.log("还不到检测止损的时候")
 				return;
 			}
-			if($this.StopPrice!==''){
+			if($this.btcStopPrice!==''){
 				var price = $this.tp.trade_price;
 				var time = $this.tp.trade_date;
 				var order = $this.oneOrder;
@@ -1389,32 +1441,34 @@ var app = new Vue({
 					console.log("不合格的市场交易价格，等待新的交易价格")
 					return;
 				}
-				if($this.ltcDirection=='d'){
-					if(price<=$this.StopPrice && $this.step==2 && time>order.create_date){
+				if($this.btcDirection=='d'){
+					if(price<=$this.btcStopPrice && $this.step==2 && time>order.create_date){
 						//撤单//止损//下新单
-
+						
 
 						if($this.receiveNotify===true){
 							console.log("他已经收到了，别通知了，等他处理完会告诉你")
 							return;
 						}
-		
-						console.info("达成止损条件，市场成交价："+price+"击穿了stopPrice："+$this.StopPrice)
+						console.info("达成止损条件，市场成交价："+price+"击穿了btcStopPrice："+$this.btcStopPrice)
+
+
 
 						$this.notifySTOP("d");
+
 
 												
 						$this.stop = true;
 					}
-				}else if($this.ltcDirection=='k'){
-					if(price>=$this.StopPrice && $this.step==2 && time>order.create_date){
+				}else if($this.btcDirection=='k'){
+					if(price>=$this.btcStopPrice && $this.step==2 && time>order.create_date){
 
 						if($this.receiveNotify===true){
 							console.log("他已经收到了，别通知了，等他处理完会告诉你")
 							return;
 						}
 
-						console.info("达成止损条件，市场成交价："+price+"击穿了stopPrice："+$this.StopPrice)
+						console.info("达成止损条件，市场成交价："+price+"击穿了btcStopPrice："+$this.btcStopPrice)
 						
 						$this.notifySTOP("k");
 
@@ -1465,7 +1519,7 @@ var app = new Vue({
 
 			setInterval($this.retreat,400);
 
-			setInterval($this.tradeLTC,1000);
+			setInterval($this.tradeBTC,1000);
 
 			setInterval($this.justify,100);
 

@@ -608,6 +608,9 @@ var app = new Vue({
 
 				return;
 			}
+			if(amount<$this.originltcAmount){
+				amount = $this.originltcAmount
+			}
 			$this.ltcAmount = amount;
 			window.localStorage.setItem("ltcAmount",String(amount))
 			

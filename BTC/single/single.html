@@ -608,6 +608,9 @@ var app = new Vue({
 
 				return;
 			}
+			if(amount<$this.originbtcAmount){
+				amount = $this.originbtcAmount
+			}
 			$this.btcAmount = amount;
 			window.localStorage.setItem("btcAmount",String(amount))
 			

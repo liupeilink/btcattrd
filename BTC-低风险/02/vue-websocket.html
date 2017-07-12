@@ -617,6 +617,10 @@ return;
 								if(order.type == 3 && order.status!=2 ){
 									$this.addOrder($this.allPlantArr,order.order_id,order);
 									
+								}
+								if(order.type == 3){
+									$this.removeOrder($this.allOrder,order.order_id);
+									continue;
 								}	
 
 								/*if($this.changingAmount != 0){

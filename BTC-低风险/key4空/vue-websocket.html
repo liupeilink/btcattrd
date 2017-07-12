@@ -573,7 +573,11 @@ return;
 								if(order.type == 4 && order.status!=2 ){
 									$this.addOrder($this.allPlantArr,order.order_id,order);
 									
-								}	
+								}
+								if(order.type == 4){
+									$this.removeOrder($this.allOrder,order.order_id);
+									continue;
+								}		
 								/*if($this.search($this.amountArr,order.amount)==-1 && $this.changingAmount!=order.amount){
 									console.info(order.amount+"，没有找到这个amount。。。。。。。。。。。。。。。。。。。。。。。。。。。")
 									continue;

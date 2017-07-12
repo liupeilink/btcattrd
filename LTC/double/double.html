@@ -92,7 +92,7 @@ var app = new Vue({
 		tp: '',
 		newestOrderTime:'',
 		inpStep:'',
-		limit:7,
+		limit:8,
 		oneOrder:'',
 		destination:'',
 		someTips:'',
@@ -107,8 +107,8 @@ var app = new Vue({
 		ltcDirection:"d",// "d"&"k"
 		curltcSell:'',
 		curltcBuy:'',
-		ltcAmount:2,
-		originltcAmount:2,
+		ltcAmount:5,
+		originltcAmount:5,
 		stop:false,
 		CloseLongRate: 1.002,
 		originlongrate: 1.002,
@@ -303,12 +303,12 @@ var app = new Vue({
 			var type=-1;
 			if(dir=='d'){
 				basePrice = data.sell;
-				givePrice = basePrice*1.002
+				givePrice = parseFloat((basePrice*1.001).toFixed(3))
 				type = 1;
 
 			}else if(dir=='k'){
 				basePrice = data.buy;
-				givePrice = basePrice*0.998
+				givePrice = parseFloat((basePrice*0.999).toFixed(3))
 				type = 2;
 			}else{
 				console.log("error:dir is "+dir)

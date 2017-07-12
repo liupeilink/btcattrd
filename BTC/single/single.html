@@ -545,6 +545,76 @@ var app = new Vue({
 			
 
 		},
+		computeShouldAmount:function(price_avg){
+			var $this = this;
+			if(window.localStorage.getItem("btchasLost")===null){
+				return;
+			}else if(window.localStorage.getItem("btchasLost")==='0'){
+				return;
+			}
+			var hasLost = parseFloat(window.localStorage.getItem("btchasLost"));
+			if(hasLost>0){
+				var curTime = new Date().getTime();
+				
+				//debug 20:26:26
+				$this.someTips = "虽然上次发生了止损，但是收益已经补回了前面所有损失，收益是："+hasLost+ ' ' +$this.formatDate(curTime) ;
+				$this.init();
+				return;
+			}
+			/*var r = $this.ltcAmount/$this.originltcAmount;
+			var cancelTime = Math.log(r)*Math.LOG2E
+			var desRate = 2-Math.sqrt(cancelTime)/4*/
+			var next = $this.btcAmount*2
+			var r = next/$this.originbtcAmount;
+			var c = Math.log(r)*Math.LOG2E;
+
+			//下次的目标收益率
+			var desRate = 2-Math.sqrt(c)/4
+
+			var destination = -hasLost*desRate;
+			$this.destination = destination;
+			
+			var duorate = $this.originlongrate
+			var kongrate = $this.originshortrate
+			var amount
+			if($this.btcDirection=='d'){
+
+				amount = Math.floor(price_avg*destination*duorate/(10*duorate-10))
+
+			}else if($this.btcDirection=='k'){
+				
+				amount = Math.floor(price_avg*destination*kongrate/(10-10*kongrate))
+
+			}
+
+			var once = $this.cal($this.limit);
+			if(amount>once*$this.originbtcAmount){
+
+				$this.btcAmount = $this.originbtcAmount;
+				window.localStorage.setItem("btcAmount",String($this.originbtcAmount))
+				console.log("heartbreak")
+				var l = window.localStorage.getItem("btchasLost")
+				var hb;
+				if(window.localStorage.getItem("btcheartbreakLost")===null){
+					window.localStorage.setItem("btcheartbreakLost", l);
+				}else{
+					hb = window.localStorage.getItem("btcheartbreakLost")
+					hb = hb + ', ' + l;
+					window.localStorage.setItem("btcheartbreakLost", hb)
+				}
+				
+				window.localStorage.setItem("btchasLost",'0');
+				$this.btchasLost = 0;
+
+				return;
+			}
+			$this.btcAmount = amount;
+			window.localStorage.setItem("btcAmount",String(amount))
+			
+			
+			console.info("computeShouldAmount: "+$this.btcAmount)
+
+		},
 		onMessage: function(e) {
 			var $this = this;
 			//$this.recCount++;
@@ -653,7 +723,7 @@ var app = new Vue({
 										}
 										$this.step = 1;
 										console.log("step: 1, 开单全成交了，将要算算平仓的费率，算完去下平单,有时候开单没有设置新newestordertime的日志，尤其是刚下完止损单的时候，我打印一下开单的人权做个比较，order.create_date: "+order.create_date)
-										$this.computeShouldRate(order.price_avg);
+										//$this.computeShouldRate(order.price_avg);
 
 										//...................................handle ls
 										/*var lsbtcCloseLongRate = window.localStorage.getItem("btcCloseLongRate")
@@ -757,42 +827,19 @@ var app = new Vue({
 
 											var once = $this.cal($this.limit);
 											
-											if($this.btcAmount>=once*$this.originbtcAmount){
+											
+											if(parseFloat(window.localStorage.getItem("btchasLost"))>=0){
+												$this.btcAmount = $this.originbtcAmount;
+												var curTime = new Date().getTime();
 
-												$this.btcAmount = $this.originbtcAmount
-												
-												var l = window.localStorage.getItem("btchasLost")
-												var hb;
-												if(window.localStorage.getItem("heartbreakLost")===null){
-													window.localStorage.setItem("heartbreakLost", l);
-												}else{
-													hb = window.localStorage.getItem("heartbreakLost")
-													hb = hb + ', ' + l;
-													window.localStorage.setItem("heartbreakLost", hb)
-												}
-												
-												window.localStorage.setItem("btchasLost",'0');
-												$this.btchasLost = 0;
-												window.localStorage.setItem("btczhiDuoRate",String($this.originzhiduorate))
-												$this.btczhiDuoRate = $this.originzhiduorate;
-												window.localStorage.setItem("btczhiKongRate",String($this.originzhikongrate))
-												$this.btczhiKongRate = $this.originzhikongrate;
-												window.localStorage.setItem("btcCloseShortRate",String($this.originshortrate))
-												$this.btcCloseShortRate = $this.originshortrate;
-												window.localStorage.setItem("btcCloseLongRate",String($this.originlongrate))
-												$this.btcCloseLongRate = $this.originlongrate;
+												//debug 20:26:24
+												$this.someTips2 = "收益>=0："+btchasLost+ ' ' +$this.formatDate(curTime) +',不再增加amount以减小风险,';
 											}else{
-												if(parseFloat(window.localStorage.getItem("btchasLost"))>=0){
-													$this.btcAmount = $this.originbtcAmount;
-													var curTime = new Date().getTime();
-
-													//debug 20:26:24
-													$this.someTips2 = "收益>=0："+btchasLost+ ' ' +$this.formatDate(curTime) +',不再增加amount以减小风险,';
-												}else{
-													$this.btcAmount = $this.btcAmount*2;
-												}
-												
+												//$this.btcAmount = $this.btcAmount*2;
+												$this.computeShouldAmount(order.price_avg);
 											}
+												
+											
 											
 											window.localStorage.setItem("btcAmount",String($this.btcAmount))
 											

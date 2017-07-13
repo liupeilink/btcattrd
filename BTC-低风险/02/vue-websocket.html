@@ -826,7 +826,7 @@ return;
 							}else if(delta>0){
 								$this.kaiduoRate1 = 0.997
 							//下跌后期、上涨前期、上涨中前期
-								if(kAmount==0){
+								if(kAmount<=$this.amount*6){
 									$this.rateFlag = "1";
 									ls.setItem("rateFlag","1");
 									
@@ -836,7 +836,7 @@ return;
 								//如果damount==0, 0.999之后会被0.997覆盖
 								$this.kaiduoRate1 = 0.999
 							//上涨后期、下跌前期、下跌中前期
-								if(dAmount==0){
+								if(dAmount<=$this.amount*6){
 									$this.rateFlag = "2";
 									ls.setItem("rateFlag","2");
 									
@@ -935,7 +935,7 @@ return;
 							}else if(delta>0){
 								$this.kaiduoRate1 = 0.997
 							//下跌后期、上涨前期、上涨中前期
-								if(kAmount==0){
+								if(kAmount<=$this.amount*6){
 									$this.rateFlag = "1";
 									ls.setItem("rateFlag","1");
 									
@@ -945,7 +945,7 @@ return;
 								//如果damount==0, 0.999之后会被0.997覆盖
 								$this.kaiduoRate1 = 0.999
 							//上涨后期、下跌前期、下跌中前期
-								if(dAmount==0){
+								if(dAmount<=$this.amount*6){
 									$this.rateFlag = "2";
 									ls.setItem("rateFlag","2");
 									

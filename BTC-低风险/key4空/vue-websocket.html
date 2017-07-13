@@ -24,7 +24,7 @@
 		<button @click="futureOrderInfo(-1)">查-1</button>
 		<button @click="futureCancelOrder(6465769535)">撤xxx</button>
 		<button @click="testspeed">test speed</button>
-		<button @click="trans">换仓</button>
+		<!-- <button @click="trans">换仓</button> -->
 		{{receiveTime - sendTime}}
 		5min开盘{{kaipan15min}}
 		<p>dueAmount:{{dueAmount}}</p>
@@ -48,7 +48,7 @@
 				<td>{{formatStatus(item.status)}}</td>
 			</tr>
 		</table> -->
-		<p>所有未完全成交平单（包括其他运行中程序所下平单）</p>
+		<!-- <p>所有未完全成交平单（包括其他运行中程序所下平单）</p>
 		<table v-show="allPlantArr.length>0" id="plt">
 			<tr>
 				<th>订单号</th><th>委托数量/成交数量</th><th>委托价格</th><th>成交均价</th><th>订单类型</th><th>委托时间</th><th>手续费</th><th>订单状态</th>
@@ -79,7 +79,7 @@
 				<td>{{item.fee}}</td>
 				<td>{{formatStatus(item.status)}}</td>
 			</tr>
-		</table>
+		</table> -->
 
 		<p>未完成的订单（待成交，部分成交）</p>
 		<table v-show="unfinishArr.length>0" id="unfinished">
@@ -289,7 +289,7 @@ var app = new Vue({
 		}*/
 	},
 	methods: {
-		trans:function(){
+		/*trans:function(){
 			var $this = this;
 			
 			$this.handleTransArr.length=0;
@@ -335,7 +335,7 @@ return;
 			},600);
 
 			
-		},
+		},*/
 		testspeed: function(){
 			var $this = this;
 			var curTime = new Date();
@@ -347,7 +347,7 @@ return;
 		ensureAllOrder: function(){
 			var $this = this;
 			console.log("im checking lost orders...")
-			var len = $this.allPlantArr.length;
+			/*var len = $this.allPlantArr.length;
 			var len0 = $this.transArr.length;
 			console.debug(".............................................10s?")
 
@@ -357,7 +357,7 @@ return;
 			}
 			//console.error(JSON.stringify($this.transArr))
 
-			$this.allPlantArr.splice(0, len)
+			$this.allPlantArr.splice(0, len)*/
 			$this.futureOrderInfo(-1);
 		},
 		formatStatus: function(s){
@@ -570,10 +570,10 @@ return;
 								if(order.type==1||order.type==3){
 									continue;
 								}
-								if(order.type == 4 && order.status!=2 ){
+								/*if(order.type == 4 && order.status!=2 ){
 									$this.addOrder($this.allPlantArr,order.order_id,order);
 									
-								}
+								}*/
 								if(order.type == 4){
 									$this.removeOrder($this.allOrder,order.order_id);
 									continue;

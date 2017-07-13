@@ -770,7 +770,7 @@ return;
 							
 							var ls = window.localStorage;
 							
-							if(Math.abs(delta)<=$this.amount*2){
+							if(Math.abs(delta)<=$this.amount*6){
 							//多空平衡
 								$this.rateFlag = "0";
 								ls.setItem("rateFlag","0");
@@ -874,7 +874,7 @@ return;
 							}*/
 							var ls = window.localStorage;
 							
-							if(Math.abs(delta)<=$this.amount*2){
+							if(Math.abs(delta)<=$this.amount*6){
 							//多空平衡
 								$this.rateFlag = "0";
 								ls.setItem("rateFlag","0");

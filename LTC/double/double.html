@@ -303,12 +303,12 @@ var app = new Vue({
 			var type=-1;
 			if(dir=='d'){
 				basePrice = data.sell;
-				givePrice = parseFloat((basePrice*1.001).toFixed(3))
+				givePrice = parseFloat((basePrice*1.0015).toFixed(3))
 				type = 1;
 
 			}else if(dir=='k'){
 				basePrice = data.buy;
-				givePrice = parseFloat((basePrice*0.999).toFixed(3))
+				givePrice = parseFloat((basePrice*0.9985).toFixed(3))
 				type = 2;
 			}else{
 				console.log("error:dir is "+dir)

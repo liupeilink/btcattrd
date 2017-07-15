@@ -219,7 +219,7 @@ var app = new Vue({
             $this.balanceData = JSON.parse(ls.getItem("balanceArr"))
             var timeData = JSON.parse(ls.getItem("timeArr"))
             $this.bondData = JSON.parse(ls.getItem("bondArr"))
-            if(timeData.length>0){
+            if(timeData!=null && timeData.length>0){
                 $this.timeData = timeData.map(function (str) {
                     return str.replace('2017/', '');
                 });
@@ -411,14 +411,14 @@ var app = new Vue({
 
         setInterval(function(){
             $this.futureUserInfo();
-        },10000)
+        },1000)
         var ls = window.localStorage;
         setInterval(function(){
             if($this.flag == true){
                 return;
             }
             var cur = new Date();
-            if(cur%300000<=30){
+            if(cur%5000<=30){
                 $this.flag = true
                 var time = $this.formatDate2(cur);
                 var q = $this.balance;
@@ -473,7 +473,7 @@ var app = new Vue({
             $this.balanceData = JSON.parse(window.localStorage.getItem("balanceArr"))
             var timeData = JSON.parse(window.localStorage.getItem("timeArr"))
             $this.bondData = JSON.parse(window.localStorage.getItem("bondArr"))
-            if(timeData.length>0){
+            if(timeData!=null && timeData.length>0){
                 $this.timeData = timeData.map(function (str) {
                     return str.replace('2017/', '');
                 });
@@ -539,11 +539,11 @@ var app = new Vue({
             }
 
 
-        },30000)
+        },3000)
 
         setInterval(function(){
             $this.myChart.setOption($this.o)
-        },150000)
+        },6000)
     }
 
 	

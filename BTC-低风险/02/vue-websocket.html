@@ -630,7 +630,9 @@ return;
 									$this.removeOrder($this.allOrder,order.order_id);
 									continue;
 								}	
-
+								if(order.amount>=20){
+									continue;
+								}
 								/*if($this.changingAmount != 0){
 
 								}*/

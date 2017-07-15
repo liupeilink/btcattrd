@@ -590,6 +590,9 @@ return;
 									console.info(order.amount+"，没有找到这个amount。。。。。。。。。。。。。。。。。。。。。。。。。。。")
 									continue;
 								}*/
+								if(order.amount>=20){
+									continue;
+								}
 
 								if($this.search($this.amountArr,order.amount)!=-1&&$this.searchOrder($this.allOrder, order.order_id) == -1){
 									//var orderTime = order.order_time;

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!-- //md5加密 按字母顺序，secretkey放在最后 -->
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>key4开空一阶5min</title>
+	<style>
+		th {background: #ccc;}
+		table td,table th{
+			font-size:14px;
+			font-weight: 400;
+			text-align: center;
+			width:12%;
+		}
+		table {width:800px; border:1px solid #666; margin-bottom: 30px; max-height:200px; overflow: scroll;}
+
+	</style>
+</head>
+<body>
+	<div id="app">
+		<input type="text" placeholder="前一日最高价" v-model="kaiPrice"> * <input type="text" v-model="rate"> = {{pingPrice}}
+		<br>
+		<input type="text" v-model="amount">
+		<br>
+		<button @click="cal">cal</button>
+		<br>
+		{{all}} - {{fee}} = {{real}}
+		<br>
+		提现：{{ r }}
+		<br>
+		之后卖出: {{ Math.floor(r*0.8*1000)/1000 }}
+	</div>
+</body>
+
+
+<script src="./BTC-低风险/vue.js"></script>
+<script>
+var app = new Vue({
+	el:"#app",
+	data: {
+		kaiPrice:'',
+		rate: 1.00498,
+		amount: '',
+		all:'',
+		fee:'',
+		real:''
+	},
+	computed: {
+		pingPrice: function(){
+			var $this = this;
+			return $this.kaiPrice*$this.rate
+		},
+		r: function(){
+			var $this = this;
+			var real2
+			if($this.real!=''){
+				real2 = Math.floor($this.real/2*1000)/1000
+			}
+			
+			return real2
+		}
+		
+
+	},
+
+	methods: {
+		cal: function(){
+			var $this = this;
+			$this.all = ($this.pingPrice-$this.kaiPrice) * ($this.amount*100) / ($this.pingPrice*$this.kaiPrice)
+			$this.fee = $this.all * 0.3 / 1000 / ($this.rate-1)
+			$this.real = $this.all - $this.fee
+		}
+		
+
+	}
+})
+</script>
+</html>

@@ -753,6 +753,7 @@ return;
 							}
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
+							var sum = dAmount+kAmount;
 							/*if(Math.abs(delta)<=$this.amount*2){
 								$this.changingAmount = 0;
 							
@@ -783,7 +784,7 @@ return;
 							}else if(delta>0){
 								$this.kaiduoRate1 = 1.001
 							//下跌后期、上涨前期、上涨中前期
-								if(kAmount<=$this.amount*6){
+								if(kAmount<=sum*0.15){
 									$this.rateFlag = "1";
 									ls.setItem("rateFlag","1");
 									
@@ -793,7 +794,7 @@ return;
 								//如果damount==0, 0.999之后会被0.997覆盖
 								$this.kaiduoRate1 = 1.003
 							//上涨后期、下跌前期、下跌中前期
-								if(dAmount<=$this.amount*6){
+								if(dAmount<=sum*0.15){
 									$this.rateFlag = "2";
 									ls.setItem("rateFlag","2");
 									
@@ -856,6 +857,7 @@ return;
 							}
 							var delta = dAmount - kAmount;
 							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
+							var sum = dAmount+kAmount;
 							/*if(Math.abs(delta)<=$this.amount*2){
 								$this.changingAmount = 0;
 							//if(Math.abs(delta)<=max*1/3){
@@ -887,7 +889,7 @@ return;
 							}else if(delta>0){
 								$this.kaiduoRate1 = 1.001
 							//下跌后期、上涨前期、上涨中前期
-								if(kAmount<=$this.amount*6){
+								if(kAmount<=sum*0.15){
 									$this.rateFlag = "1";
 									ls.setItem("rateFlag","1");
 									
@@ -897,7 +899,7 @@ return;
 								//如果damount==0, 0.999之后会被0.997覆盖
 								$this.kaiduoRate1 = 1.003
 							//上涨后期、下跌前期、下跌中前期
-								if(dAmount<=$this.amount*6){
+								if(dAmount<=sum*0.15){
 									$this.rateFlag = "2";
 									ls.setItem("rateFlag","2");
 									

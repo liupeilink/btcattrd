@@ -28,12 +28,13 @@
 		{{receiveTime - sendTime}}
 		5min开盘{{kaipan15min}}
 		<p>dueAmount: {{dueAmount}}</p>
-		<p>posState:{{posState}}</p>
+		<p>posState:{{posState}}， rateFlag:{{rateFlag}}</p>
 		1：下跌后期/上涨前期/上涨中前期 kaikongRate: {{kaiduoRate1}} should：1.003<br>
 		2：上涨后期/下跌前期/下跌中前期 kaikongRate: {{kaiduoRate1}} should：1.003<br>
 		3: 刚刚失去平衡 d > k, 下跌中后期 kaikongRate: {{kaiduoRate1}} should：1.001<br>
 		4: 刚刚失去平衡 d < k, 上涨中后期 kaikongRate: {{kaiduoRate1}} should：1.003<br>
 		0：多空平衡阶段 kaikongRate: {{kaiduoRate1}} should：1.00201<br>
+		-1：总仓位超过{{amount*100}} kaikongRate: {{kaiduoRate1}} should：1.01<br>
 <!-- 		<p>checkorder次数{{ reqCount }}</p>
 		<p>发送请求总次数{{ sendCount }}</p>
 		<p>消息达到次数{{ recCount }}</p> -->
@@ -829,6 +830,12 @@ return;
 								}
 							}
 
+							//危险状态，只更新posState，不更新rateFlag
+							if(sum>$this.amount*100){
+								$this.kaiduoRate1 = 1.01;
+								$this.posState = -1;
+							}
+
 							
 
 						}
@@ -932,6 +939,13 @@ return;
 									$this.posState = 4;
 									console.info("下跌中后期（平衡后的常规 d < k）,开空概率1.003")
 								}
+							}
+
+
+							//危险状态，只更新posState，不更新rateFlag
+							if(sum>$this.amount*100){
+								$this.kaiduoRate1 = 1.01;
+								$this.posState = -1;
 							}
 
 						}

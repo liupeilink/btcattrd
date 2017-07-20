@@ -747,9 +747,9 @@ return;
 							for(var i in positionArr){
 								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
 									console.info("dudaole position in array0")
-									dAmount = parseFloat(positionArr[i]['hold_amount']);
+									dAmount += parseFloat(positionArr[i]['hold_amount']);
 								}else if(positionArr[i]['position']=='2'&&positionArr[i]['lever_rate']==20){
-									kAmount = parseFloat(positionArr[i]['hold_amount']);
+									kAmount += parseFloat(positionArr[i]['hold_amount']);
 								}
 							}
 							var delta = dAmount - kAmount;
@@ -855,10 +855,10 @@ return;
 								
 								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
 									console.info("dudaole position in ARRAY")
-									dAmount = parseFloat(positionArr[i]['hold_amount']);
+									dAmount += parseFloat(positionArr[i]['hold_amount']);
 									console.log("dAmount:"+dAmount)
 								}else if(positionArr[i]['position']=='2'&&positionArr[i]['lever_rate']==20){
-									kAmount = parseFloat(positionArr[i]['hold_amount']);
+									kAmount += parseFloat(positionArr[i]['hold_amount']);
 								}
 								
 							}

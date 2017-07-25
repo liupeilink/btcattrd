@@ -29,6 +29,17 @@
 		提现：{{ r }}
 		<br>
 		之后卖出: {{ Math.floor(r*0.8*1000)/1000 }}
+		<hr>
+		<h2>移仓计算</h2>
+		<input type="text" v-model="priceJ" placeholder="请输入交割价格" >
+		sumD: {{sumD}}, sumK: {{sumK}}
+		<br>
+		<input type="text" v-model="newKaiduoPriceAVG" placeholder="请输入新的开多均价" >
+		<input type="text" v-model="newKaikongPriceAVG" placeholder="请输入新的开空均价" >
+		<br>
+		<button @click="cal2">cal2</button>
+
+
 	</div>
 </body>
 
@@ -43,7 +54,19 @@ var app = new Vue({
 		amount: '',
 		all:'',
 		fee:'',
-		real:''
+		real:'',
+		originPingduoPriceArr:[2401.22,2402.21,2433.2,2500,2534.33,2577.4,2680.2,2699.98,2775.43],
+		pingduoAmountArr:[4,4,4,4,2,5,5,5,1],
+		originPingkongPriceArr:[2201.44,2200,2144.52,2133,2130,2122,2100.87,2100.32,2069,2054,2038.21,1932.23],
+		pingkongAmountArr:[4,3,4,4,4,3,2,2,3,3,3,3],
+		priceJ:'',
+		rateD:'',
+		rateK:'',
+		sumD:'',
+		sumK:'',
+		newKaiduoPriceAVG:'',
+		newKaikongPriceAVG:''
+
 	},
 	computed: {
 		pingPrice: function(){
@@ -69,6 +92,50 @@ var app = new Vue({
 			$this.all = ($this.pingPrice-$this.kaiPrice) * ($this.amount*100) / ($this.pingPrice*$this.kaiPrice)
 			$this.fee = $this.all * 0.3 / 1000 / ($this.rate-1)
 			$this.real = $this.all - $this.fee
+		},
+		cal2: function(){
+			var $this = this;
+			var sumD = 0;
+			var sumK = 0;
+			var originPingduoPriceArr = $this.originPingduoPriceArr;
+			var originPingkongPriceArr = $this.originPingkongPriceArr;
+			var pingduoAmountArr = $this.pingduoAmountArr;
+			var pingkongAmountArr = $this.pingkongAmountArr;
+			var priceJ = $this.priceJ;
+			for(var i in originPingduoPriceArr){
+				sumD += (priceJ - originPingduoPriceArr[i]/1.00498) * pingduoAmountArr[i]*100 / ((originPingduoPriceArr[i]/1.00498)*priceJ)
+			}
+			for(var j in originPingduoPriceArr){
+				sumK += -(priceJ - originPingkongPriceArr[j]/0.99502)/priceJ * pingkongAmountArr[j]*100 / (originPingkongPriceArr[j]/0.99502)
+			}
+
+			$this.sumD = sumD;
+			$this.sumK = sumK;
+
+			
+
+			for(var x=0.00001; x<=10.0; x+=0.00001){
+				var newsumD = 0;
+				var newsumK = 0;
+				
+				for(var m in originPingduoPriceArr){
+					newsumD += (x*originPingduoPriceArr[m]/1.00498 - $this.newKaiduoPriceAVG*1.0) * pingduoAmountArr[m]*100 / (($this.newKaiduoPriceAVG*1.0)*(x*originPingduoPriceArr[m]/1.00498))
+				}
+				for(var n in originPingkongPriceArr){
+					newsumK += -(x*originPingkongPriceArr[n]/0.99502 - $this.newKaikongPriceAVG*1.0) * pingkongAmountArr[n]*100 / (($this.newKaikongPriceAVG*1.0)*(x*originPingkongPriceArr[n]/0.99502))
+				}
+				
+				if(newsumD+sumD<0.00001 && newsumD+sumD>-0.00001){
+					console.log("平多比率 = " + x + " 误差: "+ (newsumD+sumD)+"btc");
+					//break;
+				}
+				if(newsumK+sumK<0.0001 && newsumK+sumK>-0.0001){
+					console.log("平空比率 = " + x + " 误差: "+ (newsumK+sumK)+"btc");
+					//break;
+				}
+			}
+
+
 		}
 		
 

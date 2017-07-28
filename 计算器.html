@@ -398,11 +398,11 @@ var app = new Vue({
 				var deltaK = (priceJ - kavg) * amountK * 100 / (priceJ * kavg)
 				deltaK += -($this.newKaikongPriceAVG - priceJ) * amountK * 100 / (priceJ * $this.newKaikongPriceAVG)
 				if(newsumD-(sumD+deltaD)<0.0001 && newsumD-(sumD+deltaD)>-0.0001){
-					console.log("平多比率 = " + x + " 误差: "+ (newsumD-sumD)+"btc");
+					console.log("平多比率 = " + x + " 误差: "+ (newsumD-(sumD+deltaD))+"btc");
 					//break;
 				}
 				if(newsumK-(sumK+deltaK)<0.0001 && newsumK-(sumK+deltaK)>-0.0001){
-					console.log("平空比率 = " + x + " 误差: "+ (newsumK-sumK)+"btc");
+					console.log("平空比率 = " + x + " 误差: "+ (newsumK-(sumK+deltaK))+"btc");
 					//break;
 				}
 			}

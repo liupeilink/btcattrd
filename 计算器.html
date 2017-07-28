@@ -31,7 +31,8 @@
 		之后卖出: {{ Math.floor(r*0.8*1000)/1000 }}
 		<hr>
 		<h2>移仓计算</h2>
-		<input type="text" v-model="priceJ" placeholder="请输入交割价格" >
+		<input type="text" v-model="priceJd" placeholder="请输入平多均价" >
+		<input type="text" v-model="priceJk" placeholder="请输入平空均价" >
 		sumD: {{sumD}}, sumK: {{sumK}}
 		<br>
 		<input type="text" v-model="newKaiduoPriceAVG" placeholder="请输入新的开多均价" >
@@ -52,6 +53,8 @@
 var app = new Vue({
 	el:"#app",
 	data: {
+		priceJk:'',
+		priceJd:'',
 		oldKaikongPriceAVG:'',
 		oldKaiduoPriceAVG:'',
 		kaiPrice:'',
@@ -369,7 +372,8 @@ var app = new Vue({
 			var originPingkongPriceArr = $this.originPingkongPriceArr;
 			var pingduoAmountArr = $this.pingduoAmountArr;
 			var pingkongAmountArr = $this.pingkongAmountArr;
-			var priceJ = $this.priceJ;
+			var priceJd = $this.priceJd;
+			var priceJk = $this.priceJk;
 			var sumD = 0, sumK = 0;
 			for(var i in $this.originPingduoPriceArr){
 				sumD += (originPingduoPriceArr[i] - davg) * pingduoAmountArr[i]*100 / ((originPingduoPriceArr[i])*davg)
@@ -393,10 +397,10 @@ var app = new Vue({
 					newsumK += -(x*originPingkongPriceArr[n] - $this.newKaikongPriceAVG*1.0) * pingkongAmountArr[n]*100 / (($this.newKaikongPriceAVG*1.0)*(x*originPingkongPriceArr[n]))
 					amountK += pingkongAmountArr[n];
 				}
-				var deltaD = -(priceJ - davg) * amountD * 100 / (priceJ * davg)
-				deltaD += ($this.newKaiduoPriceAVG - priceJ) * amountD * 100 / (priceJ * $this.newKaiduoPriceAVG)
-				var deltaK = (priceJ - kavg) * amountK * 100 / (priceJ * kavg)
-				deltaK += -($this.newKaikongPriceAVG - priceJ) * amountK * 100 / (priceJ * $this.newKaikongPriceAVG)
+				var deltaD = -(priceJd - davg) * amountD * 100 / (priceJd * davg)
+				deltaD += ($this.newKaiduoPriceAVG - priceJd) * amountD * 100 / (priceJd * $this.newKaiduoPriceAVG)
+				var deltaK = (priceJk - kavg) * amountK * 100 / (priceJk * kavg)
+				deltaK += -($this.newKaikongPriceAVG - priceJk) * amountK * 100 / (priceJk * $this.newKaikongPriceAVG)
 				if(newsumD-(sumD+deltaD)<0.0001 && newsumD-(sumD+deltaD)>-0.0001){
 					console.log("平多比率 = " + x + " 误差: "+ (newsumD-(sumD+deltaD))+"btc");
 					//break;

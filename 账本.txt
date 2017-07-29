@@ -89,6 +89,10 @@
 
 7月28日 11:06 转出0.041比特币（收入）合约总成本3.7553比特币 (7-28 11:00截止)
 
+7月28日 23:09 转出0.035比特币（收入）合约总成本3.7203比特币 (7-28 23:00截止)
+
+7月29日 11:06 转出0.033比特币（收入）合约总成本3.6873比特币 (7-29 11:00截止)
+
 http://club.autohome.com.cn/bbs/thread-c-4083-63463538-1.html#pvareaid=102410
 
 D:\ProgramFiles\Ruby22-x64\bin;%JAVA_HOME%\bin;C:\Program Files\Common Files\Microsoft Shared\Windows Live;C:\Program Files (x86)\Common Files\Microsoft Shared\Windows Live;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\;C:\Program Files\Intel\WiFi\bin\;C:\Program Files\Common Files\Intel\WirelessCommon\;C:\Program Files\Lenovo\Bluetooth Software\;C:\Program Files\Lenovo\Bluetooth Software\syswow64;C:\Program Files\Broadcom\WHL\;C:\Program Files\Broadcom\WHL\syswow64;C:\Program Files\Broadcom\WHL\SysWow64\;C:\Program Files\Broadcom\WHL\SysWow64\syswow64;C:\Program Files (x86)\Windows Live\Shared;C:\Program Files (x86)\Microsoft SQL Server\100\Tools\Binn\;C:\Program Files\Microsoft SQL Server\100\Tools\Binn\;C:\Program Files\Microsoft SQL Server\100\DTS\Binn\;C:\Program Files (x86)\Microsoft SQL Server\100\Tools\Binn\VSShell\Common7\IDE\;C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE\PrivateAssemblies\;C:\Program Files (x86)\Microsoft SQL Server\100\DTS\Binn\;C:\Python27;C:\Python33;C:\Program Files\VanDyke Software\Clients\;C:\Program Files\OpenVPN\bin;%VC6_HOME%\VC98\LIB;%VC6_HOME%\VC98\MFC\LIB;%VC6_HOME%\VC98\BIN;D:\ProgramFiles\nodejs\

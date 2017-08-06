@@ -224,7 +224,7 @@ var app = new Vue({
 		subKline:'ok_sub_futureusd_btc_kline_quarter_5min',
 		kaiduoRate1:0.99802,
 		kaiduoRate2:0.001,
-		pingduoRate1:1.00498,
+		pingduoRate1:1.004,
 		pingduoRate2:1.0014,
 		deltaLimit:30000,
 		delta:0,
@@ -246,9 +246,9 @@ var app = new Vue({
 
 		//amountArr:[3,3,5,7],
 		//amountArr:[7,6,5,4],
-		amountArr:[6,5,4,3],
-		originArr:[6,5,4,3],
-		fazhi:[3000,2500,2000],
+		amountArr:[8,7,6,5,4],
+		originArr:[8,7,6,5,4],
+		fazhi:[3500,3000,2500,2000],
 		// amountArr:[3,3,3,3],
 		// fazhi:[3000,2750,2500],
 
@@ -574,8 +574,10 @@ return;
 							$this.amount = amountArr[1];
 						}else if(data[1]>fazhi[2]){
 							$this.amount = amountArr[2];
-						}else{
+						}else if(data[1]>fazhi[3]){
 							$this.amount = amountArr[3];
+						}else{
+							$this.amount = amountArr[4];
 						}
 
 						if($this.kaipan15min == ''){

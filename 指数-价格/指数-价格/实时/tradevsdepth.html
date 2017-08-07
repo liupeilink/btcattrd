@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<!-- //md5加密 按字母顺序，secretkey放在最后 -->
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>开多一阶5min</title>
+	<style>
+		#asks,#bids {
+            float: left;
+            width: 200px;
+
+        }
+
+	</style>
+</head>
+<body>
+
+	<div id="app">
+	
+    <div class="warp">
+        <div id="asks">
+            <table>
+                <tr v-for="item in arrDepthAsks">
+                    <td>{{item[1]}}</td>
+                    <td>{{item[0]}}</td>
+                </tr>
+            </table>
+        </div>
+        <div id="bids">
+            <table>
+                <tr v-for="item in arrDepthBids">
+                    <td>{{item[0]}}</td>
+                    <td>{{item[1]}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+	</div>
+</body>
+<script type="text/javascript" src="MD5.js"></script>
+<script src="../jquery-3.2.1.js"></script>
+<script src="../vue.js"></script>
+<script src="../echarts.min.js"></script>
+<script>
+
+var app = new Vue({
+	el:"#app",
+    data:{
+        flag:false,
+        okCoinWebSocket:{},
+        balance: '',
+        o:{},
+        balanceData:[],
+        timeData:[],
+        myChart:{},
+        bondData:[],
+        sellData:[],
+        buyData:[],
+        option:{},
+        last:'',
+        futureIndex:'',
+
+        timestampArr:[],
+        lastArr:[],
+        futureIndexArr:[],
+        holdAmountArr:[],
+        sellArr:[],
+        buyArr:[],
+        min:9999,
+        max:9999,
+        holdMax:'',
+        holdMin:'',
+        arrDepthAsks:[],
+        arrDepthBids:[],
+        curSecAskDepthDelta:[],
+        curSecAskTradesDealta:[]
+
+    },
+    computed:{
+        arrDepthAsksReverse: function(){
+            var $this = this;
+            return $this.arrDepthAsks.reverse();
+        }
+    },
+    methods:{
+        formatDate2: function(date){
+            var d = new Date(date);
+            return d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+        },
+        start: function(){
+            var $this = this;
+
+            $this.okCoinWebSocket.init("wss://real.okcoin.cn:10440/websocket/okcoinapi", "235b2468-bd25-402e-99b9-6b65cc66f69f", "23548D0F7A3C4E2D92A0BDC84B6CE42A");
+            $this.startTime = new Date().getTime();
+
+        },
+        futureUserInfo: function () {
+            var $this = this;
+            var okCoinWebSocket = $this.okCoinWebSocket;
+            var sign = MD5("api_key=" + okCoinWebSocket.api_key + "&secret_key=" + okCoinWebSocket.secret_key);
+            $this.doSend("{'event':'addChannel','channel':'ok_futureusd_userinfo','parameters' :{'api_key':'"
+                    + okCoinWebSocket.api_key + "','sign':'" + sign + "'}}");
+        },
+       
+        onMessage: function(e) {
+            var $this = this;
+            //$this.recCount++;
+            console.log($this.formatDate2(new Date().getTime()) + ": " + e.data)
+            var array = JSON.parse(e.data);
+            //msg为除了pong以外的数据消息
+            if(array.length==1){
+                var msg = array[0];
+                if(msg){
+                    if(msg['channel']==$this.subKline){
+                        if(msg['data'].length>1){
+                            //第一次传来许多K线不是我想要的，造成干扰
+                            return;
+                        }
+
+                    }else if(msg['channel']=="ok_futureusd_userinfo"){
+                        /*console.log(msg['data']['info']['btc']['rights'])
+                        $this.balance = msg['data']['info']['btc']['rights']
+                        $this.bond = msg['data']['info']['btc']['contracts'][0]['bond']*/
+                        
+                    }else if(msg['channel']=="ok_sub_futureusd_btc_ticker_quarter"){
+                        
+                        $this.last = {
+                            price: msg['data']['last'],
+                            time: msg['data']['timestamp'],
+                            hold: msg.data.hold_amount/400,
+                            sell: msg.data.sell,
+                            buy: msg.data.buy
+                        }
+                        if($this.last.sell>$this.max){
+                            $this.max = $this.last.sell + 1;
+                        }
+                        if($this.last.buy<$this.min){
+                            $this.min = $this.last.buy - 1;
+                        }
+                        if($this.max==9999){
+                            $this.max = Math.max($this.last.sell, $this.futureIndex)+1;
+                            $this.min = Math.min($this.last.buy, $this.futureIndex)-1;
+                        }
+                        if($this.holdMax==''){
+                            $this.holdMax=$this.last.hold+1;
+                            $this.holdMin=$this.last.hold-1
+                        }
+                        if($this.last.hold>$this.holdMax){
+                            $this.holdMax = $this.last.hold + 1;
+                        }else if($this.last.hold<$this.holdMin){
+                            $this.holdMin = $this.last.hold - 1;
+                        }
+                    }else if(msg['channel']=="ok_sub_futureusd_btc_index"){
+                        $this.futureIndex = msg['data']['futureIndex']
+                        var num = parseInt($this.futureIndex)
+                        if(num>$this.max){
+                            $this.max = num + 1;
+                        }else if(num<$this.min){
+                            $this.min = num - 1;
+                        }
+
+                    }else if(msg['channel']=="ok_sub_spot_btc_depth"){
+                        if(msg['data'].asks.length==200){
+                            $this.arrDepthAsks = msg['data'].asks.reverse();
+                            $this.arrDepthBids = msg['data'].bids;
+                        }else{
+                            $this.updateDepth(msg['data']);
+                        }
+                    }
+                    
+                }
+                   
+            }else{
+                var msg = array;
+                for(var i in msg){
+                    if(msg[i]['channel']=="ok_sub_futureusd_positions"){
+                        
+                    }else if(msg[i]['channel']=="ok_sub_futureusd_userinfo"){
+
+                    }
+                }
+            }
+
+
+            if(array.event == 'pong') {
+                $this.okCoinWebSocket.lastHeartBeat = new Date().getTime();
+            } else {
+                //$this.createTable(array);
+            }
+        
+        },
+        updateDepth: function(data){
+            var $this = this;
+
+            if(data.asks.length>0){
+                var temp0 = 0
+                for(var i in data.asks){
+
+                    if(data.asks[i][1]==0){
+
+                        for(var j=temp0; j<$this.arrDepthAsks.length; j++){
+                                //console.log("bbb")
+                            if($this.arrDepthAsks[j][1] != 0 && $this.arrDepthAsks[j][0]==data.asks[i][0]){
+                                var t = $this.arrDepthAsks[j]
+                                
+                                //$this.arrDepthAsks.splice(j,1,[t[0],0])
+                                $this.arrDepthAsks.splice(j,1)
+                                /*var t = $this.arrDepthAsks[j][0]
+                                $this.arrDepthAsks[j] = [t, 0];*/
+                                temp = j;
+                                break;
+                            }
+                        }
+                    }else if(data.asks[i][1]!=0){
+                        for(var j=temp0; j<$this.arrDepthAsks.length; j++){
+                            if($this.arrDepthAsks[j][0]==data.asks[i][0]){
+                                var t = $this.arrDepthAsks[j]
+                                
+                                $this.arrDepthAsks.splice(j,1,[t[0],data.asks[i][1]])
+                                temp = j;
+                                break;
+                            }
+                            else if($this.arrDepthAsks[j][0]>data.asks[i][0] ){
+                                
+                                
+                                
+                                if(j-1>=0){
+                                    if($this.arrDepthAsks[j-1][0]<data.asks[i][0]){
+                                        $this.arrDepthAsks.splice(j,0,[data.asks[i][0],data.asks[i][1]])
+                                        temp = j-1;
+                                        break;
+                                    }
+                                }else{
+                                    $this.arrDepthAsks.splice(j,0,[data.asks[i][0],data.asks[i][1]])
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if(data.bids.length>0){
+                var temp = 0
+                for(var i in data.bids){
+                    if(data.bids[i][1]==0){
+                        for(var j=temp; j<$this.arrDepthBids.length; j++){
+                            if($this.arrDepthBids[j][1] != 0 && $this.arrDepthBids[j][0]==data.bids[i][0]){
+                                var t = $this.arrDepthBids[j]
+                                
+                                //$this.arrDepthBids.splice(j,1,[t[0],0])
+                                $this.arrDepthBids.splice(j,1)
+
+                                
+                                /*var t = $this.arrDepthBids[j][0]
+                                $this.arrDepthBids[j] = [t, 0];*/
+                                temp = j;
+                                break;
+                            }
+                        }
+                    }else if(data.bids[i][1]!=0){
+                        for(var j=temp; j<$this.arrDepthBids.length; j++){
+                            if($this.arrDepthBids[j][0]==data.bids[i][0]){
+                                var t = $this.arrDepthBids[j]
+                                
+                                $this.arrDepthBids.splice(j,1,[t[0],data.bids[i][1]])
+                                temp = j;
+                                break;
+                            }
+                            else if($this.arrDepthBids[j][0]<data.bids[i][0] ){
+                                
+                                if(j-1>=0){
+                                    if($this.arrDepthBids[j-1][0]>data.bids[i][0]){
+                                        $this.arrDepthBids.splice(j,0,[data.bids[i][0],data.bids[i][1]])
+                                        temp = j-1;
+                                        break;
+                                    }
+                                }else{
+                                    $this.arrDepthBids.splice(j,0,[data.bids[i][0],data.bids[i][1]])
+                                    break;
+                                }
+                                
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+        doSend: function(message) {
+            var $this = this;
+            //$this.sendCount++;
+            //$this.print("SENT: " + message);
+            if($this.okCoinWebSocket){
+                var ws = $this.okCoinWebSocket.websocket
+                this.send = function (message, callback) {
+                    this.waitForConnection(function () {
+                        ws.send(message);
+                        if (typeof callback !== 'undefined') {
+                          callback();
+                        }
+                    }, 100);
+                };
+
+                this.waitForConnection = function (callback, interval) {
+                    if (ws.readyState === 1) {
+                        callback();
+                    } else {
+                        var that = this;
+                        // optional: implement backoff for interval here
+                        setTimeout(function () {
+                            that.waitForConnection(callback, interval);
+                        }, interval);
+                    }
+                };
+
+
+                this.send(message);
+            }
+            
+            
+        },
+        onOpen: function(evt) {
+            var $this = this;
+            //$this.print("CONNECTED");
+            $this.connected++;
+            //var str = "{'event':'addChannel','channel':'"+$this.subKline+"'}"
+            var str = "{'event':'addChannel','channel':'ok_sub_spot_btc_depth'}";
+            var str1 = "{'event':'addChannel','channel':'ok_sub_spotcny_btc_trades'}"
+            var strTicker = "{'event':'addChannel','channel':'ok_sub_spotcny_btc_ticker'}";
+            //console.info(str);
+            $this.doSend(str);
+            $this.doSend(str1);
+            $this.doSend(strTicker);
+            //现货交易、合约交易测试
+            //tradeTest();
+            //$this.futurePositions();
+            
+            
+        },
+
+        
+        onError: function(evt) {
+            var $this = this;
+            //$this.print('<span style="color: red;">ERROR:</span> ' + evt.data);
+            $this.error++;
+            $this.errorStr += error+'. '+evt.data;
+
+
+        },
+        onClose: function(evt) {
+            var $this = this;
+            //print("DISCONNECTED");
+            $this.disconnected++;
+        },
+        checkConnect: function () {
+            var $this = this;
+            var ws = $this.okCoinWebSocket.websocket
+            this.send = function (message, callback) {
+                this.waitForConnection(function () {
+                    ws.send(message);
+                    if (typeof callback !== 'undefined') {
+                      callback();
+                    }
+                }, 100);
+            };
+
+            this.waitForConnection = function (callback, interval) {
+                if (ws.readyState === 1) {
+                    callback();
+                } else {
+                    var that = this;
+                    // optional: implement backoff for interval here
+                    setTimeout(function () {
+                        that.waitForConnection(callback, interval);
+                    }, interval);
+                }
+            };
+
+
+            this.send("{'event':'ping'}");
+            
+            if ((new Date().getTime() - $this.okCoinWebSocket.lastHeartBeat) > $this.okCoinWebSocket.overtime) {
+                console.log("socket 连接断开，正在尝试重新建立连接");
+                //testWebSocket();
+                $this.okCoinWebSocket.init("wss://real.okcoin.cn:10440/websocket/okcoinapi", "235b2468-bd25-402e-99b9-6b65cc66f69f", "23548D0F7A3C4E2D92A0BDC84B6CE42A");
+
+            }
+        },
+
+        futurePositions: function() {
+            var $this = this;
+            var okCoinWebSocket = $this.okCoinWebSocket;
+            var sign = MD5("api_key=" + okCoinWebSocket.api_key + "&secret_key=" + okCoinWebSocket.secret_key);
+            $this.doSend("{'event':'addChannel','channel':'ok_sub_futureusd_positions','parameters' :{'api_key':'"
+                    + okCoinWebSocket.api_key + "','sign':'" + sign + "'}}");
+        },
+        initEchart:function(){
+            var $this = this;
+            $this.myChart = echarts.init(document.getElementById('main'));
+
+            
+            var timeData = $this.timestampArr;
+            var lastData = $this.lastArr;
+            var indexData = $this.futureIndexArr;
+            //var holdData = $this.holdAmountArr;
+            var sellData = $this.sellArr;
+            var buyData = $this.buyArr;
+
+            if(timeData!=null && timeData.length>0){
+                $this.timeData = timeData.map(function (str) {
+                    str = $this.formatDate2(str)
+                    return str.replace('2017/', '');
+                });
+            }
+
+            var max = $this.max;
+            var min = $this.min;
+
+
+
+
+            $this.option = {
+                title: {
+                    text: '综合指数与OKEX价格对照',
+                    subtext: '数据来自okex  Powered by lpl',
+                    x: 'center'
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        animation: false
+                    }
+                },
+                legend: {
+                    data:['流量','降雨量','持仓量','aaa'],
+                    x: 'left'
+                },
+                toolbox: {
+                    feature: {
+                        dataZoom: {
+                            yAxisIndex: 'none'
+                        },
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },
+                axisPointer: {
+                    link: {xAxisIndex: 'all'}
+                },
+                dataZoom: [
+                    {
+                        show: true,
+                        realtime: true,
+                        start: 0,
+                        end: 100,
+                        xAxisIndex: [0]
+                    }/*,
+                    {
+                        type: 'inside',
+                        realtime: true,
+                        start: 0,
+                        end: 100,
+                        xAxisIndex: [0, 1]
+                    }*/
+                ],
+                grid: [{
+                    left: 50,
+                    right: 50,
+                    height: '70%'
+                }/*, {
+                    left: 50,
+                    right: 50,
+                    // top: '55%',
+                    height: '70%'
+                },
+                {
+                    left: 50,
+                    right: 50,
+                    // top: '55%',
+                    height: '70%'
+                },
+                {
+                    left: 50,
+                    right: 50,
+                    // top: '55%',
+                    height: '70%'
+                }*/
+                ],
+                xAxis : [
+                    {
+                        type : 'category',
+                        boundaryGap : false,
+                        axisLine: {onZero: true},
+                        data: timeData
+                    }/*,
+                    {
+                        gridIndex: 1,
+                        type : 'category',
+                        boundaryGap : false,
+                        axisLine: {onZero: true},
+                        data: timeData,
+                        position: 'top'
+                    },
+                    {
+                        gridIndex: 2,
+                        type : 'category',
+                        boundaryGap : false,
+                        axisLine: {onZero: true},
+                        data: timeData,
+                        position: 'top'
+                    },
+                    {
+                        gridIndex: 3,
+                        type : 'category',
+                        boundaryGap : false,
+                        axisLine: {onZero: true},
+                        data: timeData,
+                        position: 'top'
+                    },
+                    {
+                        gridIndex: 4,
+                        type : 'category',
+                        boundaryGap : false,
+                        axisLine: {onZero: true},
+                        data: timeData,
+                        position: 'top'
+                    }*/
+                ],
+                yAxis : [
+                    {
+                        name : 'OKEX价格',
+                        type : 'value',
+                        max : max,
+                        min : min
+
+                    }/*,
+                    {
+                        gridIndex: 1,
+                        name : '指数',
+                        type : 'value',
+                        inverse: false,
+                        max : max,
+                        min : min
+                    },
+                    {
+                        gridIndex: 2,
+                        name : '持仓量',
+                        type : 'value',
+                        inverse: false,
+                        //max : $this.holdMax,
+                        //min : $this.holdMin,
+                        max:$this.max,
+                        min:$this.min
+                    },
+                    {
+                        gridIndex: 3,
+                        name : '买',
+                        type : 'value',
+                        inverse: false,
+                        //max : $this.holdMax,
+                        //min : $this.holdMin,
+                        max:$this.max,
+                        min:$this.min
+                    },
+                    {
+                        gridIndex: 4,
+                        name : '卖',
+                        type : 'value',
+                        inverse: false,
+                        //max : $this.holdMax,
+                        //min : $this.holdMin,
+                        max:$this.max,
+                        min:$this.min
+                    }*/
+                ],
+                series : [
+                    {
+                        name:'OKEX价格',
+                        type:'line',
+                        symbolSize: 8,
+                        hoverAnimation: false,
+                        data:lastData
+                    },
+                    {
+                        name:'指数',
+                        type:'line',
+/*                        xAxisIndex: 1,
+                        yAxisIndex: 1,*/
+                        symbolSize: 8,
+                        hoverAnimation: false,
+                        data:indexData
+                    },
+/*                    {
+                        name:'持仓量',
+                        type:'line',
+                        xAxisIndex: 2,
+                        yAxisIndex: 2,
+                        symbolSize: 8,
+                        hoverAnimation: false,
+                        data:holdData
+                    },*/
+                    {
+                        name:'买',
+                        type:'line',
+/*                        xAxisIndex: 2,
+                        yAxisIndex: 2,*/
+                        symbolSize: 5,
+                        hoverAnimation: false,
+                        data:buyData
+                    },
+                    {
+                        name:'卖',
+                        type:'line',
+/*                        xAxisIndex: 2,
+                        yAxisIndex: 2,*/
+                        symbolSize: 5,
+                        hoverAnimation: false,
+                        data:sellData
+                    }
+                ]
+            };
+
+
+            $this.myChart.setOption($this.option);
+        },
+        getMax:function(arr){
+            var $this = this;
+            var max;
+            if(arr.length>0){
+                max = arr[0] 
+                for(var i in arr){
+                    if(arr[i]>=max){
+                        max = arr[i];
+                    }
+                }
+                return max;
+            }else{
+                return 5;
+            }
+            
+        },
+        getMin:function(arr){
+            var $this = this;
+            var min;
+            if(arr.length>0){
+                min = arr[0] 
+                for(var i in arr){
+                    if(arr[i]<min){
+                        min = arr[i];
+                    }
+                }
+                return min;
+            }else{
+                return 0;
+            }
+            
+        },
+        draw: function(){
+
+            var $this = this;
+
+
+            $this.initEchart();
+
+            setInterval(function(){
+
+                var timeData = $this.timestampArr;
+                var lastData = $this.lastArr;
+                var indexData = $this.futureIndexArr;
+                //var holdData = $this.holdAmountArr;
+                var sellData = $this.sellArr;
+                var buyData = $this.buyArr;
+
+                if(timeData!=null && timeData.length>0){
+                    timeData = timeData.map(function (str) {
+                        str = $this.formatDate2(str);
+                        return str.replace('2017/', '');
+                    });
+                }
+                var min = $this.min;
+                var max = $this.max;
+
+
+                $this.o = {
+                 xAxis : [
+                    {
+                        type : 'category',
+                        boundaryGap : false,
+                        axisLine: {onZero: true},
+                        data: timeData
+                    }/*,
+                    {
+                        gridIndex: 1,
+                        type : 'category',
+                        boundaryGap : false,
+                        axisLine: {onZero: true},
+                        data: timeData,
+                        position: 'top'
+                    },
+                     {
+                        gridIndex: 2,
+                        type : 'category',
+                        boundaryGap : false,
+                        axisLine: {onZero: true},
+                        data: timeData,
+                        position: 'top'
+                    }*/
+                ],
+                yAxis : [
+                        {
+                            name : 'OKEX价格',
+                            type : 'value',
+                            max : max,
+                            min : min
+
+                        }/*,
+                        {
+                            gridIndex: 1,
+                            name : '指数',
+                            type : 'value',
+                            inverse: false,
+                            min: min,
+                            max: max
+                        },
+                        {
+                        gridIndex: 2,
+                        name : '持仓量',
+                        type : 'value',
+                        inverse: false,
+                        // max : $this.holdMax,
+                        // min : $this.holdMin
+                        max:$this.max,
+                        min:$this.min
+                    }*/
+                    ],
+               series : [
+                    {
+                        name:'OKEX价格',
+                        type:'line',
+                        symbolSize: 8,
+                        hoverAnimation: false,
+                        data:lastData
+                    },
+                    {
+                        name:'指数',
+                        type:'line',
+                        // xAxisIndex: 1,
+                        // yAxisIndex: 1,
+                        symbolSize: 8,
+                        hoverAnimation: false,
+                        data: indexData
+                    },
+                   /* {
+                        name:'持仓量',
+                        type:'line',
+                        // xAxisIndex: 2,
+                        // yAxisIndex: 2,
+                        symbolSize: 8,
+                        hoverAnimation: false,
+                        data:holdData
+                    }*/
+                    {
+                        name:'买',
+                        type:'line',
+                        // xAxisIndex: 2,
+                        // yAxisIndex: 2,
+                        symbolSize: 8,
+                        hoverAnimation: false,
+                        data:buyData
+                    },
+                    {
+                        name:'卖',
+                        type:'line',
+                        // xAxisIndex: 2,
+                        // yAxisIndex: 2,
+                        symbolSize: 8,
+                        hoverAnimation: false,
+                        data:sellData
+                    }
+                    ]
+                }
+
+                $this.myChart.setOption($this.o)
+
+            },2000)
+
+
+        },
+        setData:function(){
+            var $this = this;
+
+            if($this.lastArr.length>=90000){
+                var len = $this.lastArr.length;
+                console.log(len)
+                $this.lastArr.splice(0,len-86400);
+                $this.timestampArr.splice(0,len-86400);
+                $this.futureIndexArr.splice(0,len-86400);
+                //$this.holdAmountArr.splice(0,len-43200);
+                $this.sellArr.splice(0,len-86400);
+                $this.buyArr.splice(0,len-86400)
+            }
+
+            if($this.last != '' && $this.futureIndex != ''){
+
+                $this.lastArr.push($this.last.price);
+                $this.timestampArr.push($this.last.time);
+                $this.futureIndexArr.push($this.futureIndex)
+                $this.sellArr.push($this.last.sell);
+                $this.buyArr.push($this.last.buy);
+                //$this.holdAmountArr.push($this.last.hold)
+            }else{
+                return;
+            }
+ 
+        },
+        setStorage:function(){
+            var $this = this;
+            if(window.localStorage.getItem("last")!=null){
+                var arrlast = JSON.parse(window.localStorage.getItem("last"));
+                var arrtime = JSON.parse(window.localStorage.getItem("timestamp"));
+                var arrindex = JSON.parse(window.localStorage.getItem("futureIndex"));
+
+                var lsPos = arrtime.length;
+                var lastSaveTime = arrtime[lsPos-1];
+
+                var l = $this.lastArr;
+                var t = $this.timestampArr;
+                var ind = $this.futureIndexArr;
+                var pos = 0;
+                for(var i=t.length-1; i>=0; i--){
+                    if(t[i]<lastSaveTime){
+                        pos = i+1;
+                    }
+                }
+                for(var j=pos;j<t.length;j++){
+                    arrlast.push(l[j]);
+                    arrtime.push(t[j]);
+                    arrindex.push(ind[j]);
+                }
+                window.localStorage.setItem("last",JSON.stringify(arrlast))
+                window.localStorage.setItem("timestamp",JSON.stringify(arrtime))
+                window.localStorage.setItem("futureIndex",JSON.stringify(arrindex))
+               
+            }else{
+                window.localStorage.setItem("last",JSON.stringify($this.lastArr))
+                window.localStorage.setItem("timestamp",JSON.stringify($this.timestampArr))
+                window.localStorage.setItem("futureIndex",JSON.stringify($this.futureIndexArr))
+
+            }
+        },
+
+    },
+    mounted: function(){
+        var $this = this;
+
+        //初始化执行一次，如果缓存有，读出来给他们
+        /*if(window.localStorage.getItem("last")!=null){
+            var arrlast = JSON.parse(window.localStorage.getItem("last"));
+            var arrtime = JSON.parse(window.localStorage.getItem("timestamp"));
+            var arrindex = JSON.parse(window.localStorage.getItem("futureIndex"));
+            for(var i=0; i<arrlast.length; i++){
+                $this.lastArr.push(arrlast[i]);
+                $this.timestampArr.push(arrtime[i]);
+                $this.futureIndexArr.push(arrindex[i]);
+            }
+        }*/
+
+        $this.okCoinWebSocket.init = function(uri, apiKey, secretKey) {
+            this.wsUri = uri;
+            this.api_key = apiKey;
+            this.secret_key = secretKey;
+            this.lastHeartBeat = new Date().getTime();
+            this.overtime = 8000;
+            var okCoinWebSocket = $this.okCoinWebSocket;
+            
+            okCoinWebSocket.websocket = new WebSocket(okCoinWebSocket.wsUri);
+            
+            okCoinWebSocket.websocket.onopen = function(evt) {
+                $this.onOpen(evt)
+            };
+            okCoinWebSocket.websocket.onclose = function(evt) {
+                $this.onClose(evt)
+            };
+            okCoinWebSocket.websocket.onmessage = function(evt) {
+                $this.onMessage(evt)
+            };
+            okCoinWebSocket.websocket.onerror = function(evt) {
+                $this.onError(evt)
+            };
+            
+            setInterval($this.checkConnect,2000);
+            setInterval($this.setData,1000);
+
+            
+            // setInterval($this.setStorage,60000);
+           
+        }
+        $this.start();
+        //$this.draw();
+
+
+
+
+
+        
+        
+    }
+
+	
+		
+})
+</script>
+</html>

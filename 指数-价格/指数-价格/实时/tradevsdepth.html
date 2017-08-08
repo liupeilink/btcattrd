@@ -242,7 +242,26 @@ var app = new Vue({
 			            			
 			            			$this.numB.count += (-$this.numDeltaBid.num)
 
-			            			console.log($this.formatDate2($this.numDeltaBid.time)+"..........狗庄进货了........当前进货量："+(-$this.numDeltaBid.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
+                                    if($this.numB.price>msg['data'][i][1]){
+                                        if($this.flag=="d"){
+                                            console.log($this.formatDate2($this.numDeltaBid.time)+", 老铁，快下车！！！！！.........................")
+                                        }else{
+                                            console.info($this.formatDate2($this.numDeltaBid.time)+", 下车")
+                                            
+                                        }
+                                        $this.flag="k"
+                                        
+                                    }else{
+                                        if($this.flag=="k"){
+                                            console.log($this.formatDate2($this.numDeltaBid.time)+", 老铁，快上车！！！！！.........................")
+                                        }else{
+                                            console.info($this.formatDate2($this.numDeltaBid.time)+", 上车")
+                                            
+                                        }
+                                        $this.flag="d"
+                                    }
+
+			            			//console.log($this.formatDate2($this.numDeltaBid.time)+"..........狗庄进货了........当前进货量："+(-$this.numDeltaBid.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
 			            		}
 
                     		}
@@ -254,10 +273,30 @@ var app = new Vue({
 
 			            			$this.numB.count -= (-$this.numDeltaAsk.num)
 
-			            			console.log($this.formatDate2($this.numDeltaAsk.time)+"..........狗庄出货了........当前出货量："+(-$this.numDeltaAsk.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
+                                    if($this.numB.price>msg['data'][i][1]){
+                                        if($this.flag=="d"){
+                                            console.log($this.formatDate2($this.numDeltaBid.time)+", 老铁，快下车！！！！！.........................")
+                                        }else{
+                                            console.info($this.formatDate2($this.numDeltaBid.time)+", 下车")
+                                            
+                                        }
+                                        $this.flag="k"
+                                        
+                                    }else{
+                                        if($this.flag=="k"){
+                                            console.log($this.formatDate2($this.numDeltaBid.time)+", 老铁，快上车！！！！！.........................")
+                                        }else{
+                                            console.info($this.formatDate2($this.numDeltaBid.time)+", 上车")
+                                            
+                                        }
+                                        $this.flag="d"
+                                    }
+
+			            			//console.log($this.formatDate2($this.numDeltaAsk.time)+"..........狗庄出货了........当前出货量："+(-$this.numDeltaAsk.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
 			            		}
                     			
                     		} 
+                            
                     	}
                     	
                     }else if(msg['channel']=="ok_sub_spotcny_btc_ticker"){

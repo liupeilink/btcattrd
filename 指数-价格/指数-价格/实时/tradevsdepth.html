@@ -128,7 +128,11 @@ var app = new Vue({
         curSecAskTradesDealta:[],
         arrTradesData:[],
         numDeltaAsk:{},//偷卖
-        numDeltaBid:{}//偷买
+        numDeltaBid:{},//偷买
+        numB: {
+        	price: 0,
+        	count: 0
+        }
 
     },
     computed:{
@@ -233,14 +237,24 @@ var app = new Vue({
                     		if(msg['data'][i][4]=='bid' && msg['data'][i][1]==$this.numDeltaBid.price){
                     			$this.numDeltaBid.num -= parseFloat(msg['data'][i][2])
                     			if($this.numDeltaBid.num < 0 && (-$this.numDeltaBid.num).toFixed(3)!=0){
-			            			console.log($this.formatDate2($this.numDeltaBid.time)+"..........狗庄进货了........当前进货量："+(-$this.numDeltaBid.num).toFixed(3))
+                    				
+                    				$this.numB.price = (($this.numB.price*$this.numB.count + (-$this.numDeltaBid.num)*msg['data'][i][1])/($this.numB.count+(-$this.numDeltaBid.num))).toFixed(2)
+			            			
+			            			$this.numB.count += (-$this.numDeltaBid.num)
+
+			            			console.log($this.formatDate2($this.numDeltaBid.time)+"..........狗庄进货了........当前进货量："+(-$this.numDeltaBid.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
 			            		}
 
                     		}
                     		if(msg['data'][i][4]=='ask' && msg['data'][i][1]==$this.numDeltaAsk.price){
                     			$this.numDeltaAsk.num -= parseFloat(msg['data'][i][2])
                     			if($this.numDeltaAsk.num < 0 && (-$this.numDeltaAsk.num).toFixed(3)!=0){
-			            			console.log($this.formatDate2($this.numDeltaAsk.time)+"..........狗庄出货了........当前出货量："+(-$this.numDeltaAsk.num).toFixed(3))
+
+                    				$this.numB.price = (($this.numB.price*$this.numB.count - (-$this.numDeltaAsk.num)*msg['data'][i][1])/($this.numB.count-(-$this.numDeltaAsk.num))).toFixed(2)
+
+			            			$this.numB.count -= (-$this.numDeltaAsk.num)
+
+			            			console.log($this.formatDate2($this.numDeltaAsk.time)+"..........狗庄出货了........当前出货量："+(-$this.numDeltaAsk.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
 			            		}
                     			
                     		} 

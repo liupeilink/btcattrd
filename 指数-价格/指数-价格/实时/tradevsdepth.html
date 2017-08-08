@@ -126,7 +126,9 @@ var app = new Vue({
         arrDepthBids:[],
         curSecAskDepthDelta:[],
         curSecAskTradesDealta:[],
-        arrTradesData:[]
+        arrTradesData:[],
+        numDeltaAsk:{},//偷卖
+        numDeltaBid:{}//偷买
 
     },
     computed:{
@@ -138,7 +140,8 @@ var app = new Vue({
     methods:{
         formatDate2: function(date){
             var d = new Date(date);
-            return d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+            //d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate()+" "+
+            return d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
         },
         start: function(){
             var $this = this;
@@ -227,6 +230,14 @@ var app = new Vue({
                     	for(var i in msg['data']){
                     		$this.arrTradesData = msg['data'][i]
                     		console.log(msg['data'][i][1],msg['data'][i][2],msg['data'][i][3],msg['data'][i][4])
+                    		if(msg['data'][i][4]=='bid' && msg['data'][i][1]==$this.numDeltaBid.price){
+                    			$this.numDeltaBid.num -= parseFloat(msg['data'][i][2])
+
+                    		}
+                    		if(msg['data'][i][4]=='ask' && msg['data'][i][1]==$this.numDeltaAsk.price){
+                    			$this.numDeltaAsk.num -= parseFloat(msg['data'][i][2])
+                    			
+                    		} 
                     	}
                     	
                     }else if(msg['channel']=="ok_sub_spotcny_btc_ticker"){
@@ -261,8 +272,18 @@ var app = new Vue({
 
             	for(var i in data.asks){
             		if($this.arrDepthAsks[0][0]==data.asks[i][0]){
-            			if($this.arrDepthAsks[0][1]>data.asks[i][1]){
-		            		console.info(data.asks[i][0], $this.arrDepthAsks[0][1]+'-'+data.asks[i][1]+"="+(parseFloat($this.arrDepthAsks[0][1])-parseFloat(data.asks[i][1])).toFixed(3), data.timestamp, "卖单减少，对应trades的bid（若该时间点有trades）")
+            			if($this.arrDepthAsks[0][1]>data.asks[i][1] && (-$this.numDeltaBid.num).toFixed(3)!=0){
+            				if($this.numDeltaBid.num < 0){
+		            			console.log($this.formatDate2($this.numDeltaBid.time)+"!!!!!!!!!!!!!!偷买了"+(-$this.numDeltaBid.num).toFixed(3))
+		            		}
+            				var delta = (parseFloat($this.arrDepthAsks[0][1])-parseFloat(data.asks[i][1]))
+		            		console.info(data.asks[i][0], $this.arrDepthAsks[0][1]+'-'+data.asks[i][1]+"="+delta.toFixed(3), $this.formatDate2(data.timestamp), "卖单减少，对应trades的bid（若该时间点有trades）")
+		            		
+		            		$this.numDeltaBid = {
+		            			time: data.timestamp,
+		            			price: data.asks[i][0],
+		            			num: delta
+		            		}
 		            	}
 		            	break;
             		}
@@ -319,7 +340,18 @@ var app = new Vue({
             	for(var i in data.bids){
             		if($this.arrDepthBids[0][0]==data.bids[i][0]){
             			if($this.arrDepthBids[0][1]>data.bids[i][1]){
-		            		console.info(data.bids[i][0], $this.arrDepthBids[0][1]+'-'+data.bids[i][1]+"="+(parseFloat($this.arrDepthBids[0][1])-parseFloat(data.bids[i][1])).toFixed(3), data.timestamp, "买单减少，对应trades的ask（若该时间点有trades）")
+            				if($this.numDeltaAsk.num < 0 && (-$this.numDeltaAsk.num).toFixed(3)!=0){
+		            			console.log($this.formatDate2($this.numDeltaAsk.time)+"!!!!!!!!!!!!!!偷卖了"+(-$this.numDeltaAsk.num).toFixed(3))
+		            		}
+            				var delta = (parseFloat($this.arrDepthBids[0][1])-parseFloat(data.bids[i][1]));
+		            		console.info(data.bids[i][0], $this.arrDepthBids[0][1]+'-'+data.bids[i][1]+"="+delta.toFixed(3), $this.formatDate2(data.timestamp), "买单减少，对应trades的ask（若该时间点有trades）")
+		            		
+		            		$this.numDeltaAsk = {
+		            			time: data.timestamp,
+		            			price: data.bids[i][0],
+		            			num: delta
+		            		}
+
 		            	}
 		            	break;
             		}

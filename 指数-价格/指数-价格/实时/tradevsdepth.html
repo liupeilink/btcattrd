@@ -233,7 +233,7 @@ var app = new Vue({
                     	//}
                     	for(var i in msg['data']){
                     		$this.arrTradesData = msg['data'][i]
-                    		console.log(msg['data'][i][1],msg['data'][i][2],msg['data'][i][3],msg['data'][i][4])
+                    		//console.log(msg['data'][i][1],msg['data'][i][2],msg['data'][i][3],msg['data'][i][4])
                     		if(msg['data'][i][4]=='bid' && msg['data'][i][1]==$this.numDeltaBid.price){
                     			$this.numDeltaBid.num -= parseFloat(msg['data'][i][2])
                     			if($this.numDeltaBid.num < 0 && (-$this.numDeltaBid.num).toFixed(3)!=0){
@@ -242,7 +242,8 @@ var app = new Vue({
 			            			
 			            			$this.numB.count += (-$this.numDeltaBid.num)
 
-                                    if($this.numB.price>msg['data'][i][1]){
+                                    //if($this.numB.price>msg['data'][i][1]){
+                                    if($this.numB.count<0){
                                         if($this.flag=="d"){
                                             console.log($this.formatDate2($this.numDeltaBid.time)+", 老铁，快下车！！！！！.........................")
                                         }else{
@@ -261,7 +262,7 @@ var app = new Vue({
                                         $this.flag="d"
                                     }
 
-			            			//console.log($this.formatDate2($this.numDeltaBid.time)+"..........狗庄进货了........当前进货量："+(-$this.numDeltaBid.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
+			            			console.log($this.formatDate2($this.numDeltaBid.time)+"..................当前进货量："+(-$this.numDeltaBid.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
 			            		}
 
                     		}
@@ -273,7 +274,8 @@ var app = new Vue({
 
 			            			$this.numB.count -= (-$this.numDeltaAsk.num)
 
-                                    if($this.numB.price>msg['data'][i][1]){
+                                    //if($this.numB.price>msg['data'][i][1]){
+                                    if($this.numB.count<0){
                                         if($this.flag=="d"){
                                             console.log($this.formatDate2($this.numDeltaBid.time)+", 老铁，快下车！！！！！.........................")
                                         }else{
@@ -292,7 +294,7 @@ var app = new Vue({
                                         $this.flag="d"
                                     }
 
-			            			//console.log($this.formatDate2($this.numDeltaAsk.time)+"..........狗庄出货了........当前出货量："+(-$this.numDeltaAsk.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
+			            			console.log($this.formatDate2($this.numDeltaAsk.time)+"..................当前出货量："+(-$this.numDeltaAsk.num).toFixed(3)+" 近期成本："+$this.numB.price+', '+$this.numB.count.toFixed(3))
 			            		}
                     			
                     		} 

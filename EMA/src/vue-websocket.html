@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>key4开空一阶5min</title>
+	<title>EMA-15min</title>
 	<style>
 		th {background: #ccc;}
 		table td,table th{
@@ -13,71 +13,47 @@
 			width:12%;
 		}
 		table {width:800px; border:1px solid #666; margin-bottom: 30px; max-height:200px; overflow: scroll;}
+		#error,#info{  float: left; width:400px; font-size:12px;}
 
 	</style>
 </head>
 <body>
 	<div id="app">
-		<button @click="start">启动</button>
+		<!-- <button @click="start">启动</button>
 		<button @click="showOrder1">查看未完成订单</button>
 		<button @click="futureTrade(1000,1,1)">下单</button>
 		<button @click="futureOrderInfo(-1)">查-1</button>
 		<button @click="futureCancelOrder(6465769535)">撤xxx</button>
-		<button @click="testspeed">test speed</button>
+		<button @click="testspeed">test speed</button> -->
 		<!-- <button @click="trans">换仓</button> -->
 		{{receiveTime - sendTime}}
 
 		<p>dueAmount: {{dueAmount}}</p>
 
-
-
-		<p>未完成的订单（待成交，部分成交）</p>
-		<table v-show="unfinishArr.length>0" id="unfinished">
+		<table v-if="objs.length>0">
 			<tr>
-				<th>订单号</th><th>委托数量/成交数量</th><th>委托价格</th><th>成交均价</th><th>订单类型</th><th>委托时间</th><th>手续费</th><th>订单状态</th>
+				<th>时间</th><th>ema3</th><th>ema5</th><th>ema10</th><th>收盘价</th><th>isValid</th>
 			</tr>
-			<tr v-for="item in unfinishArr">
-				<td>{{item['order_id']}}</td>
-				<td>{{item.amount+"/"+item.deal_amount}}</td>
-				<td>{{item.price}}</td>
-				<td>{{item.price_avg}}</td>
-				<td>{{item.type==1?"开多":(item.type==3?"平多":item.type)}}</td>
-				<td>{{formatDate(item.create_date)}}</td>
-				<td>{{item.fee}}</td>
-				<td>{{formatStatus(item.status)}}</td>
-			</tr>
-		</table>
-		<p>nextTickAmount 有所成交的多单（只增不减）</p>
-		<table v-show="nextTickAmount.length>0" id="hasdealDuo">
-			<tr>
-				<th>订单号</th><th>委托数量/成交数量</th><th>委托价格</th><th>成交均价</th><th>订单类型</th><th>委托时间</th><th>手续费</th><th>订单状态</th>
-			</tr>
-			<tr v-for="item in nextTickAmount">
-				<td>{{item['order_id']}}</td>
-				<td>{{item.amount+"/"+item.deal_amount}}</td>
-				<td>{{item.price}}</td>
-				<td>{{item.price_avg}}</td>
-				<td>{{item.type==1?"开多":(item.type==3?"平多":item.type)}}</td>
-				<td>{{formatDate(item.create_date)}}</td>
-				<td>{{item.fee}}</td>
-				<td>{{formatStatus(item.status)}}</td>
+			<tr v-for="item in objs">
+				<td>{{ item.formatTime }}</td><td>{{ item.ema3 }}</td><td>{{ item.ema5 }}</td><td>{{ item.ema10 }}</td><td>{{ item.price }}</td><td>{{ item.isValid }}</td>
 			</tr>
 		</table>
 
+		<div id="wrap">
+			<div id="error">
+				<p>error_msg:</p>
+				<p v-html="strError" style="color:red;"></p>
+			</div>
+			<div id="info">
+				<p>info_msg:</p>
+				<p v-html="strInfo" style=""></p>
+			</div>
+		</div>
 
-		<p>allOrder (只遍历非平单)</p>
-		<table id="processing">
-			<tr>
-				<th>订单号</th><th>cycle时间</th>
-			</tr>
-			<tr v-for="item in allOrder">
-				<td>{{item['order_id']}}</td>				
-				<td>{{formatDate(item.order_time)}}</td>
 
-			</tr>
-		</table>
+		
 		<div>
-			<p v-if="startTime">
+			<p v-if="startTime" >
 				系统启动时间：{{formatDate(startTime)}}
 			</p>
 		</div>
@@ -96,9 +72,15 @@
 var app = new Vue({
 	el:"#app",
 	data: {
+		strError:'',
+		strInfo:'',
 		EMA3:'',
 		EMA5:'',
 		EMA10:'',
+		obj1:{},
+		obj2:{},
+		obj3:{},
+		//objs:[],
 		okCoinWebSocket:{},
 
 		posState: '',
@@ -139,8 +121,8 @@ var app = new Vue({
 		disconnected: 0,
 		errorStr: '',
 
-		cycleNum:300000,
-		subKline:'ok_sub_futureusd_btc_kline_quarter_5min',
+		cycleNum:900000,
+		subKline:'ok_sub_futureusd_btc_kline_quarter_15min',
 		kaiduoRate1:1.00201,
 		kaiduoRate2:0.001,
 		pingduoRate1:0.996,
@@ -177,12 +159,124 @@ var app = new Vue({
 
 	},
 	computed: {
-
+		objs: function(){
+			var $this = this;
+			var arr = [];
+			arr.push($this.obj1)
+			arr.push($this.obj2)
+			arr.push($this.obj3)	
+			return arr
+		}
 
 	},
 	methods: {
+		logError: function(str, funcName){
+			var $this = this;
+			var cur = $this.formatDate(new Date().getTime());
+			
+			if(window.localStorage.getItem('EMAError')===null){
+				$this.strError = cur + ', ' + str + ', ' + funcName + '<br>';
+			}else{
+				var oldStr = window.localStorage.getItem('EMAError');
+				$this.strError = oldStr + cur + ', ' + str + ', ' + funcName + '<br>';
+			}
+			window.localStorage.setItem("EMAError", $this.strError);
+		},
+		logInfo: function(str, funcName){
+			var $this = this;
+			var cur = $this.formatDate(new Date().getTime());
+			
+			if(window.localStorage.getItem('EMAInfo')===null){
+				$this.strInfo = cur + ', ' + str + ', ' + funcName + '<br>';
+			}else{
+				var oldStr = window.localStorage.getItem('EMAInfo');
+				$this.strInfo = oldStr + cur + ', ' + str + ', ' + funcName + '<br>';
+			}
+			window.localStorage.setItem("EMAInfo", $this.strInfo);
+		},
 		initEMA: function(arr){
 			var $this = this;
+			var len = arr.length;
+			if(len<13){
+				
+				$this.logError("K线数据不足13", 'initEMA()')
+				return;
+			}
+			var startY3=0, startY5=0, startY10=0;
+			for(var i=0; i<3; i++){
+				startY3 += arr[i][4]*(i+1)/6
+			}
+			for(var i=0; i<5; i++){
+				startY5 += arr[i][4]*(i+1)/15
+			}
+			for(var i=0; i<10; i++){
+				startY10 += arr[i][4]*(i+1)/55
+			}
+
+			var objs = [], obj1 = {}, obj2 = {}, obj3 = {};
+			
+			for(i=3; i<len; i++){
+				startY3 = (2*arr[i][4]+(3-1)*startY3)/(3+1)
+				if(i==len-3){
+					startY3 = parseFloat(startY3.toFixed(2))
+					obj1.timestamp = arr[i][0];
+					obj1.price = arr[i][4];
+					obj1.ema3 = startY3;
+					obj1.formatTime = $this.formatDate(parseInt(obj1.timestamp));
+					obj1.isValid = true;
+				}else if(i==len-2){
+					startY3 = parseFloat(startY3.toFixed(2))
+					startY3 = parseFloat(startY3.toFixed(2))
+					obj2.timestamp = arr[i][0];
+					obj2.price = arr[i][4];
+					obj2.ema3 = startY3;
+					obj2.formatTime = $this.formatDate(parseInt(obj2.timestamp));
+					obj2.isValid = true;
+				}else if(i==len-1){
+					startY3 = parseFloat(startY3.toFixed(2))
+					startY3 = parseFloat(startY3.toFixed(2))
+					obj3.timestamp = arr[i][0];
+					obj3.price = arr[i][4];
+					obj3.ema3 = startY3;
+					obj3.formatTime = $this.formatDate(parseInt(obj3.timestamp));
+				}
+				//console.log("Y3" + "-" + $this.formatDate(parseInt(arr[i][0])) + ': ' + startY3)				
+			}
+			for(i=5; i<len; i++){
+				startY5 = (2*arr[i][4]+(5-1)*startY5)/(5+1)
+				if(i==len-3){
+					startY5 = parseFloat(startY5.toFixed(2))
+					obj1.ema5 = startY5
+				}else if(i==len-2){
+					startY5 = parseFloat(startY5.toFixed(2))
+					obj2.ema5 = startY5
+				}else if(i==len-1){
+					startY5 = parseFloat(startY5.toFixed(2))
+					obj3.ema5 = startY5
+				}
+				//console.log("Y5" + "-" + $this.formatDate(parseInt(arr[i][0])) + ': ' + startY5)
+			}
+			for(i=10; i<len; i++){
+				startY10 = (2*arr[i][4]+(10-1)*startY10)/(10+1)
+				if(i==len-3){
+					//startY10 = parseFloat(startY10.toFixed(2))
+					obj1.ema10 = startY10
+				}else if(i==len-2){
+					startY10 = parseFloat(startY10.toFixed(2))
+					obj2.ema10 = startY10
+				}else if(i==len-1){
+					startY10 = parseFloat(startY10.toFixed(2))
+					obj3.ema10 = startY10
+				}
+				//console.log("Y10" + "-" + $this.formatDate(parseInt(arr[i][0])) + ': ' + startY10)
+			}
+			$this.obj1 = obj1;
+			$this.obj2 = obj2;
+			$this.obj3 = obj3;
+
+			//$this.objs = objs;
+			localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+			
 		},
 
 		testspeed: function(){
@@ -289,45 +383,157 @@ var app = new Vue({
 			}
 			return -1;
 		},
+		decideYs: function(data){
+			var $this = this;
+			if(window.localStorage.getItem("EMAdata")===null){
+				$this.initEMA(data);
+			}else{
+				var arr = JSON.parse(window.localStorage.getItem("EMAdata"))
+				console.log("EMAdata form localStorage: "+JSON.stringify(arr))
+				var obj = arr[1]
+				if(obj.timestamp < data[0][0]-900000){
+					window.localStorage.removeItem("EMAdata")
+					$this.logInfo("缓存数据过时，清空ls的EMAdata","decideYs")
+					$this.initEMA(data);
+				}else{
+					$this.alterEMA(data, obj);
+				}
+			}
+		},
+		alterEMA: function(data, obj){
+			var $this = this;
+			var startIndex = 0;
+			for(var i=0; i<data.length; i++){
+				if(obj.timestamp == data[i][0]-900000){
+					startIndex = i;
+					break;
+				}
+			}
+			var len = data.length;
+			var objs = JSON.parse(window.localStorage.getItem("EMAdata"))
+
+			//一组K线数据最后一个元素正好是obj3,将ls的emadata直接还原即可
+			if(startIndex == data.length-1){
+				$this.obj1 = objs[0];
+				$this.obj2 = objs[1];
+				$this.obj3 = objs[2];
+				console.log("一组K线数据最后一个元素正好是obj3,将ls的emadata直接还原即可")
+				$this.logInfo("一组K线数据最后一个元素正好是obj3,将ls的emadata直接还原即可","alterEMA()")
+				window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+				return;
+			}else if(startIndex == data.length-2){
+				$this.obj1 = objs[1]
+				$this.obj2.timestamp = data[len-2][0]
+				$this.obj2.price = data[len-2][4]
+				$this.obj2.ema3 = $this.calema(data[len-2][4], 3, $this.obj1.ema3);
+				$this.obj2.ema5 = $this.calema(data[len-2][4], 5, $this.obj1.ema5);
+				$this.obj2.ema10 = $this.calema(data[len-2][4], 10, $this.obj1.ema10);
+				$this.obj2.isValid = true;
+				$this.obj2.formatTime = $this.formatDate( parseInt($this.obj2.timestamp) );
+				$this.obj3 = {
+					timestamp: data[len-1][0],
+					price: data[len-1][4],
+					formatTime: $this.formatDate( parseInt(data[len-1][0]) )
+				}
+				window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+				$this.logInfo("EMAdata落后这组K线1个周期","alterEMA()")
+				return;
+
+			}
+			var y3;
+			for(var i=startIndex; i<data.length; i++){
+				//(2*data[i][4] + (3-1)*obj.ema3) / (3+1)
+				obj.ema3 = $this.calema(data[i][4], 3, obj.ema3)
+				obj.ema5 = $this.calema(data[i][4], 5, obj.ema5)
+				obj.ema10 = $this.calema(data[i][4], 10, obj.ema10)
+				if(i == data.length-3){
+					$this.obj1.timestamp = data[len-3][0];
+					$this.obj1.price = data[len-3][4];
+					$this.obj1.ema3 = obj.ema3;
+					$this.obj1.ema5 = obj.ema5;
+					$this.obj1.ema10 = obj.ema10;
+					$this.obj1.isValid = true;
+					$this.obj1.formatTime = $this.formatDate( parseInt(data[i][0]) )
+				}else if(i == data.length-2){
+					$this.obj2.timestamp = data[len-2][0];
+					$this.obj2.price = data[len-2][4];
+					$this.obj2.ema3 = obj.ema3;
+					$this.obj2.ema5 = obj.ema5;
+					$this.obj2.ema10 = obj.ema10;
+					$this.obj2.isValid = true;
+					$this.obj2.formatTime = $this.formatDate( parseInt(data[i][0]) )
+				}else if(i == data.length-1){
+					$this.obj3.timestamp = data[len-1][0];
+					$this.obj3.price = data[len-1][4];
+					//$this.obj3.ema3 = obj.ema3;
+					//$this.obj3.ema5 = obj.ema5;
+					//$this.obj3.ema10 = obj.ema10;
+					//$this.obj3.isValid = true;
+					$this.obj3.formatTime = $this.formatDate( parseInt(data[i][0]) )
+				}else{
+					continue;
+				}
+			}
+			$this.logInfo("EMAdata落后这组K线1个周期以上","alterEMA()")
+			window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+
+
+		},
+		calema: function(p, n, y){
+			var $this= this;
+			var num = parseFloat(((2*p + (n-1)*y)/(n+1)).toFixed(2))
+			return num;
+		},
+		checkStatus: function(){
+			var $this = this;
+		},
 		onMessage: function(e) {
 			var $this = this;
 			//$this.recCount++;
-			console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
+			//console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
 			var array = JSON.parse(e.data);
 			//msg为除了pong以外的数据消息
 			if(array.length==1){
 				var msg = array[0];
 				if(msg){
 					if(msg['channel']=="ok_sub_futureusd_btc_kline_quarter_15min"){
+						console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
 						if(msg['data'].length>1){
-							$this.initEMA(msg.data);
+							$this.decideYs(msg.data);
 							
 						}else{
+							var data = msg['data'][0];
 
-						}
-						var data = msg['data'][0];
+							if($this.obj3.timestamp == data[0]-900000){
+								$this.obj1 = $this.obj2;
+								$this.obj2 = $this.obj3;
+								$this.obj2.isValid = true;
+								$this.checkStatus();
+								$this.obj3 = {
+									timestamp: data[0],
+									price: data[4],
+									formatTime: $this.formatDate( parseInt(data[0]) )
 
-						if($this.kaipan15min == ''){
-							$this.kaipan15min = data[1];
-							$this.cur15minTime = data[0];
-						}
-
-						if($this.cur15minTime!='' && $this.cur15minTime < data[0]){
-							console.info($this.cur15minTime+","+data[0])
-							$this.kaipan15min = data[1];
-							$this.cur15minTime = data[0];
-							
-							var curTime = new Date().getTime();
-							var delta = curTime%$this.cycleNum;
-							$this.delta = delta;
-							//if(delta>$this.deltaLimit){
-							if(curTime>$this.cur15minTime+30000){
-								console.info("k线数据来的太慢了。等下一个cycle")
+								}
+								window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+								console.log("set data .............................")
+							}else if($this.obj3.timestamp == data[0]){
+								$this.obj3.price = data[4];
+								$this.obj3.ema3 = $this.calema(data[4], 3, $this.obj2.ema3)
+								$this.obj3.ema5 = $this.calema(data[4], 5, $this.obj2.ema5)
+								$this.obj3.ema10 = $this.calema(data[4], 10, $this.obj2.ema10)
 							}else{
-								//$this.makeorder();							
+								$this.logError( "obj3时间："+$this.obj3.timestamp+"错误，新来的K线数据时间："+$this.formatDate(parseInt(data[0])), "ok_sub_futureusd_btc_kline_quarter_15min" )
 							}
-							//$this.makePlantOrder();
+
+							if($this.cur15minTime < data[0]){
+								console.info($this.cur15minTime+","+data[0])
+							
+								$this.cur15minTime = data[0];
+								
+							}
 						}
+						
 						
 						
 						
@@ -335,7 +541,7 @@ var app = new Vue({
 
 					}
 					else if(msg['channel']=="ok_futureusd_orderinfo"){
-						console.info("okinfo come in")
+						//console.info("okinfo come in")
 						if(msg['data'].result&&msg['data'].result!='false'){
 							for(var i=0; i<msg['data'].orders.length; i++){
 								var order = msg['data'].orders[i];
@@ -398,68 +604,7 @@ var app = new Vue({
 
 							
 							
-							var ls = window.localStorage;
 							
-							if(Math.abs(delta)<=$this.amount*6){
-							//多空平衡
-								$this.rateFlag = "0";
-								ls.setItem("rateFlag","0");
-
-								$this.kaiduoRate1 = $this.origin;
-
-							}else if(delta>0){
-								$this.kaiduoRate1 = 1.001
-							//下跌后期、上涨前期、上涨中前期
-								if(kAmount<=sum*0.15){
-									$this.rateFlag = "1";
-									ls.setItem("rateFlag","1");
-									
-								}
-		
-							}else{
-								//如果damount==0, 0.999之后会被0.997覆盖
-								$this.kaiduoRate1 = 1.003
-							//上涨后期、下跌前期、下跌中前期
-								if(dAmount<=sum*0.15){
-									$this.rateFlag = "2";
-									ls.setItem("rateFlag","2");
-									
-								}
-
-							}
-
-							//尝试从缓存中读取rateFlag
-							if(ls.getItem("rateFlag")!=null){
-								$this.rateFlag = ls.getItem("rateFlag")
-							}
-
-							if($this.rateFlag == "1"){
-								$this.posState = 1;
-								$this.kaiduoRate1 = 1.003;
-								
-							}else if($this.rateFlag == "2"){
-								
-								$this.posState = 2;
-								
-							}else{
-								//不是1也不是2,那就是在中前期或中后期
-								if($this.kaiduoRate1 == 1.001){
-									console.info("上涨中前期（平衡后的常规 d > k），开空概率1.001")
-									$this.posState = 3;
-								}else if($this.kaiduoRate1 == $this.origin){
-									console.info("多空平衡中...")
-									$this.posState = 0;
-								}else{
-									$this.posState = 4;
-									console.info("下跌中后期（平衡后的常规 d < k）,开空概率1.003")
-								}
-							}
-
-							//危险状态，只更新posState，不更新rateFlag
-							if(sum>$this.amount*100){
-								$this.kaiduoRate1 = 1.01;
-								$this.posState = -1;
-							}
 
 							
 
@@ -492,69 +637,6 @@ var app = new Vue({
 							var sum = dAmount+kAmount;
 
 
-							var ls = window.localStorage;
-							
-							if(Math.abs(delta)<=$this.amount*6){
-							//多空平衡
-								$this.rateFlag = "0";
-								ls.setItem("rateFlag","0");
-
-								$this.kaiduoRate1 = $this.origin;
-
-							}else if(delta>0){
-								$this.kaiduoRate1 = 1.001
-							//下跌后期、上涨前期、上涨中前期
-								if(kAmount<=sum*0.15){
-									$this.rateFlag = "1";
-									ls.setItem("rateFlag","1");
-									
-								}
-		
-							}else{
-								//如果damount==0, 0.999之后会被0.997覆盖
-								$this.kaiduoRate1 = 1.003
-							//上涨后期、下跌前期、下跌中前期
-								if(dAmount<=sum*0.15){
-									$this.rateFlag = "2";
-									ls.setItem("rateFlag","2");
-									
-								}
-
-							}
-
-							//尝试从缓存中读取rateFlag
-							if(ls.getItem("rateFlag")!=null){
-								$this.rateFlag = ls.getItem("rateFlag")
-							}
-
-							if($this.rateFlag == "1"){
-								$this.posState = 1;
-								$this.kaiduoRate1 = 1.003;
-								
-							}else if($this.rateFlag == "2"){
-								
-								$this.posState = 2;
-								
-							}else{
-								//不是1也不是2,那就是在中前期或中后期
-								if($this.kaiduoRate1 == 1.001){
-									console.info("上涨中前期（平衡后的常规 d > k），开空概率1.001")
-									$this.posState = 3;
-								}else if($this.kaiduoRate1 == $this.origin){
-									console.info("多空平衡中...")
-									$this.posState = 0;
-								}else{
-									$this.posState = 4;
-									console.info("下跌中后期（平衡后的常规 d < k）,开空概率1.003")
-								}
-							}
-
-
-							//危险状态，只更新posState，不更新rateFlag
-							if(sum>$this.amount*100){
-								$this.kaiduoRate1 = 1.01;
-								$this.posState = -1;
-							}
 
 						}
 						
@@ -645,7 +727,7 @@ var app = new Vue({
 			$this.doSend(str);
 			//现货交易、合约交易测试
 			//tradeTest();
-			//$this.futurePositions();
+			$this.futurePositions();
 			
 		},
 		createTable: function(array) {
@@ -725,7 +807,7 @@ var app = new Vue({
 		},
 		futureOrderInfo: function(orderId) {
 			//-1表示未完成订单
-			console.info("i am querying info")
+			//console.info("i am querying info")
 			var $this = this;
 			var okCoinWebSocket = $this.okCoinWebSocket;
 			/*var str = "api_key=" + okCoinWebSocket.api_key + "&contract_type=quarter&current_page=1&order_id=" + orderId + "&page_length=1&secret_key=" + okCoinWebSocket.secret_key + "&status=1&symbol=btc_usd"*/
@@ -767,6 +849,14 @@ var app = new Vue({
 			var sign = MD5("api_key=" + okCoinWebSocket.api_key + "&secret_key=" + okCoinWebSocket.secret_key);
 			$this.doSend("{'event':'addChannel','channel':'ok_sub_futureusd_positions','parameters' :{'api_key':'"
 					+ okCoinWebSocket.api_key + "','sign':'" + sign + "'}}");
+		},
+		setData: function(){
+			var $this = this;
+			var ls = window.localStorage;
+			/*if(ls.getItem('EMAError')!==null){
+				$this.strError = ls['EMAError'];
+			}*/
+
 		}
 			
 	
@@ -774,7 +864,7 @@ var app = new Vue({
 	},
 	mounted() {
 		var $this = this;
-
+		$this.setData();
 		$this.okCoinWebSocket.init = function(uri, apiKey, secretKey) {
 			this.wsUri = uri;
 			this.api_key = apiKey;
@@ -809,10 +899,10 @@ var app = new Vue({
 
 
 			var cur = new Date().getTime();
-			var random = cur%1000*1000
-			//0~999s
-			if(random<300000||random>600000){
-				random = 350000
+			var random = cur%1000*1000+500000
+			//0~999s 5001000~1499000
+			if(random<900000){
+				random = 950000
 			}
 
 

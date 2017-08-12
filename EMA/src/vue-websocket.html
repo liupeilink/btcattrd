@@ -93,7 +93,6 @@
 var app = new Vue({
 	el:"#app",
 	data: {
-
 		positionD:{},
 		positionK:{},
 		tickerData:{},
@@ -623,17 +622,39 @@ var app = new Vue({
 		},
 		reMakeOrder: function(type){
 			var $this = this;
-			switch(type){
-				case 1: $this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
-				break;
-				case 2: $this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
-				break;
-				case 3: $this.futureTrade(parseFloat($this.tickerData.sell-0.05), 3, $this.positionD.eveningup );
-				break;
-				case 4: $this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.eveningup );
-				break;
-				default: break;
+
+			if(type==3){
+				if($this.positionD.hold_amount!=$this.positionD.eveningup){
+					$this.logError("虽然撤平多单成功了，但positionD.hold_amount!=positionD.eveningup，说明新的position还没到，加个定时器","reMakeOrder()")
+					var timer = setInterval(function(){
+						if($this.positionD.hold_amount==$this.positionD.eveningup){
+							$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 3, $this.positionD.hold_amount );
+							clearInterval(timer);
+						}
+					}, 100);
+				}else{
+					$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 3, $this.positionD.hold_amount );
+				}
+			}else if(type==4){
+				if($this.positionK.hold_amount!=$this.positionK.eveningup){
+					$this.logError("虽然撤平空单成功了，但positionK.hold_amount!=positionK.eveningup，说明新的position还没到，加个定时器","reMakeOrder()")
+					var timer = setInterval(function(){
+						if($this.positionK.hold_amount==$this.positionK.eveningup){
+							$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.hold_amount );
+							clearInterval(timer);
+						}
+					}, 100);
+				}else{
+					$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.hold_amount );
+				}
+			}else if(type==1){
+				$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+			}else if(type==2){
+				$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+			}else{
+				$this.logError("type="+type,"reMakeOrder()")
 			}
+
 		},
 		chaseOrder: function(order){
 			var $this = this

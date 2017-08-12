@@ -582,11 +582,13 @@ var app = new Vue({
 				//ema3 上穿 ema10
 				if(obj2.ema5 - obj2.ema10 <= 0.26){
 					$this.logInfo("开多信号出现","checkStatus()")
+					$this.openLong()
 				}else{
 					$this.logInfo("ema3上穿ema10,但是ema5过高，丢弃","checkStatus()")
 				}
 				if(obj2.ema3 > obj2.ema5){
 					$this.logInfo("平空信号出现","checkStatus()")
+					$this.closeShort()
 				}else{
 					$this.logInfo("ema3上穿ema10，但是ema3还没有击穿ema5，暂不平空","checkStatus()")
 				}
@@ -594,11 +596,13 @@ var app = new Vue({
 				//ema3 下穿 ema10
 				if(obj2.ema5 - obj2.ema10 >= -0.26){
 					$this.logInfo("开空信号出现","checkStatus()")
+					$this.openShort();
 				}else{
 					$this.logInfo("ema3下穿ema10，但是ema5过低，丢弃","checkStatus()")
 				}
 				if(obj2.ema3 < obj2.ema5){
 					$this.logInfo("平多信号出现","checkStatus()")
+					$this.closeLong();
 				}else{
 					$this.logInfo("ema3下穿ema10，但是ema3还没有击穿ema5，暂不平多","checkStatus()")
 				}
@@ -606,10 +610,12 @@ var app = new Vue({
 				if(obj1.ema3 < obj1.ema10 && obj2.ema3 < obj2.ema10){
 					if(obj1.ema3 >= obj1.ema5 && obj2.ema3 < obj2.ema5){
 						$this.logInfo("可能是迟到的平多信号，取决于是否持有多仓","checkStatus()")
+						$this.closeLong();
 					}
 				}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 > obj2.ema10){
 					if(obj1.ema3 <= obj1.ema5 && obj2.ema3 > obj2.ema5){
 						$this.logInfo("可能是迟到的平空信号，取决于是否持有空仓","checkStatus()")
+						$this.closeShort();
 					}
 				}
 

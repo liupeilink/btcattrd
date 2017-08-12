@@ -580,11 +580,11 @@ var app = new Vue({
 			var obj2 = $this.obj2;*/
 			if(obj1.ema3 < obj1.ema10 && obj2.ema3 > obj2.ema10){
 				//ema3 上穿 ema10
-				if(obj2.ema5 - obj2.ema10 <= 0.26){
+				if((obj2.ema5-obj2.ema10 <= 0.32 && obj2.ema5-obj2.ema10 >=-0.32)||(obj2.ema5-obj2.ema10 > 1.5)||(obj2.ema5-obj2.ema10 < -0.6)){
 					$this.logInfo("开多信号出现","checkStatus()")
 					$this.openLong()
 				}else{
-					$this.logInfo("ema3上穿ema10,但是ema5过高，丢弃","checkStatus()")
+					$this.logInfo("ema3上穿ema10,但是ema5-ema10="+(obj2.ema5 - obj2.ema10)+"，丢弃","checkStatus()")
 				}
 				if(obj2.ema3 > obj2.ema5){
 					$this.logInfo("平空信号出现","checkStatus()")
@@ -594,11 +594,11 @@ var app = new Vue({
 				}
 			}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 < obj2.ema10){
 				//ema3 下穿 ema10
-				if(obj2.ema5 - obj2.ema10 >= -0.26){
+				if((obj2.ema5-obj2.ema10 <= 0.32 && obj2.ema5-obj2.ema10 >=-0.32)||(obj2.ema5-obj2.ema10 < -1.5)||(obj2.ema5-obj2.ema10 > 0.6)){
 					$this.logInfo("开空信号出现","checkStatus()")
 					$this.openShort();
 				}else{
-					$this.logInfo("ema3下穿ema10，但是ema5过低，丢弃","checkStatus()")
+					$this.logInfo("ema3下穿ema10，但是ema5-ema10="+(obj2.ema5 - obj2.ema10)+"，丢弃","checkStatus()")
 				}
 				if(obj2.ema3 < obj2.ema5){
 					$this.logInfo("平多信号出现","checkStatus()")

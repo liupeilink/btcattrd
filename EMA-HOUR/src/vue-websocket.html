@@ -747,7 +747,7 @@ var app = new Vue({
 								order_time: time-time%$this.cycleNum
 							}
 
-							$this.allOrder.push(order);
+							//$this.allOrder.push(order);
 							//$this.proxyingArr.push(order);
 							
 						}
@@ -1041,10 +1041,10 @@ var app = new Vue({
 
 
 			var cur = new Date().getTime();
-			var random = cur%1000*10000
+			var random = cur%1000*1000
 			
-			if(random<3600000){
-				random = 3800000
+			if(random<300000){
+				random = 350000
 			}
 
 

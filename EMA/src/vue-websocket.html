@@ -27,15 +27,36 @@
 		<button @click="testspeed">test speed</button> -->
 		<!-- <button @click="trans">换仓</button> -->
 		{{receiveTime - sendTime}}
-
+		<p>ticker: sell：{{ tickerData.sell }}, buy: {{ tickerData.buy }}, last: {{ tickerData.last }}</p>
 		<p>dueAmount: {{dueAmount}}</p>
+		<div>
+			<p>手动校准ema，不填则使用原来值</p>
+			<div>
+				设置obj2：<input v-model="inpEMA.ema3" type="text" placeholder="ema3"><input v-model="inpEMA.ema5" type="text" placeholder="ema5"><input v-model="inpEMA.ema10" type="text" placeholder="ema10">
+			</div>
+			<button @click="setInpEMA">确认</button>
+		</div>
 
 		<table v-if="objs.length>0">
 			<tr>
-				<th>时间</th><th>ema3</th><th>ema5</th><th>ema10</th><th>收盘价</th><th>isValid</th>
+				<th>时间</th><th>ema3</th><th>比较</th><th>ema10</th><th>ema5</th><th>收盘价</th><th>isValid</th>
 			</tr>
 			<tr v-for="item in objs">
-				<td>{{ item.formatTime }}</td><td>{{ item.ema3 }}</td><td>{{ item.ema5 }}</td><td>{{ item.ema10 }}</td><td>{{ item.price }}</td><td>{{ item.isValid }}</td>
+				<td>{{ item.formatTime }}</td>
+				<td>{{ item.ema3 }}</td>
+				<td><span v-if="item.ema3<item.ema10">&lt;</span><span v-if="item.ema3>item.ema10">&gt;</span></td>
+				<td>{{ item.ema10 }}</td>
+				<td>{{ item.ema5 }}</td>
+				<td>{{ item.price }}</td>
+				<td>{{ item.isValid }}</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<th>id</th>
+			</tr>
+			<tr v-for="item in chases">
+				<td>{{ item.id }}</td>
 			</tr>
 		</table>
 
@@ -72,6 +93,15 @@
 var app = new Vue({
 	el:"#app",
 	data: {
+
+		positionD:{},
+		positionK:{},
+		tickerData:{},
+		inpEMA:{
+			ema3:'',
+			ema5:'',
+			ema10:''
+		},
 		strError:'',
 		strInfo:'',
 		EMA3:'',
@@ -80,6 +110,10 @@ var app = new Vue({
 		obj1:{},
 		obj2:{},
 		obj3:{},
+		chase1:{},
+		chase2:{},
+		chase3:{},
+		chase4:{},
 		//objs:[],
 		okCoinWebSocket:{},
 
@@ -130,7 +164,7 @@ var app = new Vue({
 		pingduoRate2:1.0014,
 		deltaLimit:30000,
 		delta:0,
-		amount:8,
+		amount: 50,
 		changingAmount: 0,
 		leverRate:20,
 
@@ -166,10 +200,30 @@ var app = new Vue({
 			arr.push($this.obj2)
 			arr.push($this.obj3)	
 			return arr
+		},
+		chases: function(){
+			var $this = this;
+			var arr = [];
+			arr.push($this.chase1);
+			arr.push($this.chase2);
+			arr.push($this.chase3);
+			arr.push($this.chase4);
+			return arr
 		}
 
 	},
 	methods: {
+		setInpEMA: function(){
+			var $this = this;
+			for(var i in $this.inpEMA){
+				if($this.inpEMA[i]!=''){
+					$this.logInfo("手动校准了"+i+",原值："+$this.obj2[i]+",新值："+$this.inpEMA[i], "setInpEMA()")
+					$this.obj2[i] = parseFloat($this.inpEMA[i]);
+
+				}
+			}
+			window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+		},
 		logError: function(str, funcName){
 			var $this = this;
 			var cur = $this.formatDate(new Date().getTime());
@@ -318,19 +372,6 @@ var app = new Vue({
 			$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "e4efd00c-64eb-49db-a010-9897ff89f61f", "");
 			$this.startTime = new Date().getTime();
 
-		},
-		checkOrders: function(){
-			var $this = this;
-
-			//$this.futureOrderInfo(-1);
-			for(var i=0; i<$this.allOrder.length; i++){
-				//console.info("checkorders")
-				//$this.reqCount++
-				if($this.allOrder[i].type!=4){
-					$this.futureOrderInfo($this.allOrder[i].order_id);
-				}
-				
-			}
 		},
 		removeOrder: function(arr, id){
 			var $this = this;
@@ -484,8 +525,130 @@ var app = new Vue({
 			var num = parseFloat(((2*p + (n-1)*y)/(n+1)).toFixed(2))
 			return num;
 		},
-		checkStatus: function(){
+		openLong: function(){
 			var $this = this;
+			if($this.positionD.hold_amount>=$this.amount){
+				return;
+			}else{
+				//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
+				//$this.futureTrade(max, 1, $this.amount-$this.positionD.hold_amount)
+				$this.futureTrade(parseFloat($this.tickerData.buy)+0.55, 1, $this.amount-$this.positionD.hold_amount)
+			}
+		},
+		openShort: function(){
+			var $this = this;
+			if($this.positionK.hold_amount>=$this.amount){
+				return;
+			}else{
+				//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
+				//$this.futureTrade(min, 2, $this.amount)
+				$this.futureTrade(parseFloat($this.tickerData.sell)-0.55, 2, $this.amount-$this.positionK.hold_amount)
+			}
+		},
+		closeLong: function(){
+			var $this = this;
+			if($this.positionD.hold_amount==0){
+				return;
+			}else{
+				if($this.positionD.eveningup>0){
+					//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
+					//$this.futureTrade(min, 3, $this.positionD.eveningup);
+					$this.futureTrade(parseFloat($this.tickerData.sell)-0.55, 3, $this.positionD.eveningup)
+				}else{
+					$this.logError("平多过程中，有多仓位，但是无可平仓位", "closeLong()")
+				}
+			}
+		},
+		closeShort: function(){
+			var $this = this;
+			if($this.positionK.hold_amount==0){
+				return;
+			}else{
+				if($this.positionK.eveningup>0){
+
+					//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
+					//$this.futureTrade(max, 4, $this.positionK.eveningup);
+					$this.futureTrade(parseFloat($this.tickerData.buy)+0.55, 4, $this.positionK.eveningup)
+				}else{
+					$this.logError("平空过程中，有空仓位，但是无可平仓位", "closeShort()")
+				}
+			}
+		},
+		checkStatus: function(obj1, obj2){
+			var $this = this;
+			/*var obj1 = $this.obj1;
+			var obj2 = $this.obj2;*/
+			if(obj1.ema3 < obj1.ema10 && obj2.ema3 > obj2.ema10){
+				//ema3 上穿 ema10
+				if(obj2.ema5 - obj2.ema10 <= 0.26){
+					$this.logInfo("开多信号出现","checkStatus()")
+				}else{
+					$this.logInfo("ema3上穿ema10,但是ema5过高，丢弃","checkStatus()")
+				}
+				if(obj2.ema3 > obj2.ema5){
+					$this.logInfo("平空信号出现","checkStatus()")
+				}else{
+					$this.logInfo("ema3上穿ema10，但是ema3还没有击穿ema5，暂不平空","checkStatus()")
+				}
+			}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 < obj2.ema10){
+				//ema3 下穿 ema10
+				if(obj2.ema5 - obj2.ema10 >= -0.26){
+					$this.logInfo("开空信号出现","checkStatus()")
+				}else{
+					$this.logInfo("ema3下穿ema10，但是ema5过低，丢弃","checkStatus()")
+				}
+				if(obj2.ema3 < obj2.ema5){
+					$this.logInfo("平多信号出现","checkStatus()")
+				}else{
+					$this.logInfo("ema3下穿ema10，但是ema3还没有击穿ema5，暂不平多","checkStatus()")
+				}
+			}else{
+				if(obj1.ema3 < obj1.ema10 && obj2.ema3 < obj2.ema10){
+					if(obj1.ema3 >= obj1.ema5 && obj2.ema3 < obj2.ema5){
+						$this.logInfo("可能是迟到的平多信号，取决于是否持有多仓","checkStatus()")
+					}
+				}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 > obj2.ema10){
+					if(obj1.ema3 <= obj1.ema5 && obj2.ema3 > obj2.ema5){
+						$this.logInfo("可能是迟到的平空信号，取决于是否持有空仓","checkStatus()")
+					}
+				}
+
+			}
+		},
+		reMakeOrder: function(type){
+			var $this = this;
+			switch(type){
+				case 1: $this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+				break;
+				case 2: $this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+				break;
+				case 3: $this.futureTrade(parseFloat($this.tickerData.sell-0.05), 3, $this.positionD.eveningup );
+				break;
+				case 4: $this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.eveningup );
+				break;
+				default: break;
+			}
+		},
+		chaseOrder: function(order){
+			var $this = this
+			var type = parseInt(order.type);
+
+			
+			
+			switch(type){
+				case 1: $this.chase1.id = order.order_id;
+				break;
+				case 2: $this.chase2.id = order.order_id;
+				break;
+				case 3: $this.chase3.id = order.order_id;
+				break;
+				case 4: $this.chase4.id = order.order_id;
+				break;
+				default: break;
+			}
+			$this.logInfo("chase2.id:"+$this.chase2.id, "chaseOrder()")
+			$this.futureCancelOrder(order.order_id);
+
 		},
 		onMessage: function(e) {
 			var $this = this;
@@ -505,10 +668,12 @@ var app = new Vue({
 							var data = msg['data'][0];
 
 							if($this.obj3.timestamp == data[0]-900000){
+								$this.logInfo( "新的k线来了，K线时间是："+$this.formatDate( parseInt(data[0]) ),'ok_sub_futureusd_btc_kline_quarter_15min' )
+								$this.kaipan15min = data[1]
 								$this.obj1 = $this.obj2;
 								$this.obj2 = $this.obj3;
 								$this.obj2.isValid = true;
-								$this.checkStatus();
+								$this.checkStatus($this.obj1, $this.obj2);
 								$this.obj3 = {
 									timestamp: data[0],
 									price: data[4],
@@ -524,6 +689,7 @@ var app = new Vue({
 								$this.obj3.ema10 = $this.calema(data[4], 10, $this.obj2.ema10)
 							}else{
 								$this.logError( "obj3时间："+$this.obj3.timestamp+"错误，新来的K线数据时间："+$this.formatDate(parseInt(data[0])), "ok_sub_futureusd_btc_kline_quarter_15min" )
+								return;
 							}
 
 							if($this.cur15minTime < data[0]){
@@ -542,15 +708,20 @@ var app = new Vue({
 					}
 					else if(msg['channel']=="ok_futureusd_orderinfo"){
 						//console.info("okinfo come in")
+						//console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
 						if(msg['data'].result&&msg['data'].result!='false'){
 							for(var i=0; i<msg['data'].orders.length; i++){
 								var order = msg['data'].orders[i];
-								
-								if(order.lever_rate!=10){
+								if(order.price>=99998){
 									continue;
 								}
+								
 								if(order.symbol=='ltc_usd'){
 									continue;
+								}
+
+								if(order.status == 0 || order.status == 1){
+									$this.chaseOrder(order);
 								}
 								
 								
@@ -578,13 +749,29 @@ var app = new Vue({
 						if(msg['data'].result&&msg['data'].result!='false'){
 							var id = msg['data'].order_id;
 
+							for(var i=0; i<$this.chases.length; i++){
+								if($this.chases[i].id == id){
+									$this.reMakeOrder(i+1);
+									$this.logInfo("撤单成功，将要追单，类型为:"+(i+1),"ok_futureusd_cancel_order")
+									break;
+								}
+							}
+
+
 
 							
-							$this.removeOrder($this.retreatArr,id);
-
-							
+						}else{
+							$this.logError("撤单失败","ok_futureusd_cancel_order")
 						}
+					}else if(msg['channel']=="ok_sub_futureusd_btc_ticker_quarter"){
+						var data = msg['data'];
+						$this.tickerData = data;
+
+						
+
+
 					}else if(msg['channel']=="ok_sub_futureusd_positions"){
+						console.log($this.formatDate(new Date().getTime()) + ": " + e.data);
 						if(msg['data']['symbol']=='btc_usd'){
 							var positionArr = msg['data']['positions']
 							var dAmount = 0;
@@ -592,21 +779,16 @@ var app = new Vue({
 							for(var i in positionArr){
 								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
 									console.info("dudaole position in array0")
-									dAmount += parseFloat(positionArr[i]['hold_amount']);
+									dAmount = parseFloat(positionArr[i]['hold_amount']);
+									$this.positionD.hold_amount = parseFloat(positionArr[i]['hold_amount'])
+									$this.positionD.eveningup = parseFloat(positionArr[i]['eveningup'])
+
 								}else if(positionArr[i]['position']=='2'&&positionArr[i]['lever_rate']==20){
-									kAmount += parseFloat(positionArr[i]['hold_amount']);
+									kAmount = parseFloat(positionArr[i]['hold_amount']);
+									$this.positionK.hold_amount = parseFloat(positionArr[i]['hold_amount'])
+									$this.positionK.eveningup = parseFloat(positionArr[i]['eveningup'])
 								}
 							}
-							var delta = dAmount - kAmount;
-							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
-							var sum = dAmount+kAmount;
-
-
-							
-							
-							
-
-							
 
 						}
 						
@@ -617,6 +799,8 @@ var app = new Vue({
 				var msg = array;
 				for(var i in msg){
 					if(msg[i]['channel']=="ok_sub_futureusd_positions"){
+
+						console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
 						if(msg[i]['data']['symbol']=='btc_usd'){
 							var positionArr = msg[i]['data']['positions']
 							var dAmount=0;
@@ -624,17 +808,19 @@ var app = new Vue({
 							for(var i in positionArr){
 								
 								if(positionArr[i]['position']=='1'&&positionArr[i]['lever_rate']==20){
-									console.info("dudaole position in ARRAY")
-									dAmount += parseFloat(positionArr[i]['hold_amount']);
-									console.log("dAmount:"+dAmount)
+									
+									dAmount = parseFloat(positionArr[i]['hold_amount']);
+									$this.positionD.hold_amount = parseFloat(positionArr[i]['hold_amount'])
+									$this.positionD.eveningup = parseFloat(positionArr[i]['eveningup'])
+									
 								}else if(positionArr[i]['position']=='2'&&positionArr[i]['lever_rate']==20){
-									kAmount += parseFloat(positionArr[i]['hold_amount']);
+									kAmount = parseFloat(positionArr[i]['hold_amount']);
+									$this.positionK.hold_amount = parseFloat(positionArr[i]['hold_amount'])
+									$this.positionK.eveningup = parseFloat(positionArr[i]['eveningup'])
 								}
 								
 							}
-							var delta = dAmount - kAmount;
-							var max = dAmount - kAmount > 0 ? dAmount : kAmount;
-							var sum = dAmount+kAmount;
+
 
 
 
@@ -650,34 +836,9 @@ var app = new Vue({
 
 			if(array.event == 'pong') {
 				$this.okCoinWebSocket.lastHeartBeat = new Date().getTime();
-			} else {
-				//$this.createTable(array);
-			}
+			} 
 		},
 
-		showOrder1: function(){
-			var $this =  this;
-			//$this.futureOrderInfo(-1);
-			//this.futureTrade();
-		},
-		retreat: function(){
-			var $this = this;
-			
-			for(var i=0; i<$this.retreatArr.length; i++){
-				$this.futureCancelOrder($this.retreatArr[i].order_id);
-			}
-
-		},
-		makeorder: function(){
-			var $this = this;
-
-			var price1 = parseFloat(($this.kaipan15min * $this.kaiduoRate1).toFixed(2));
-
-			$this.futureTrade(price1,2,$this.amount);
-
-			
-
-		},
 
 
 		print: function(message) {
@@ -723,40 +884,18 @@ var app = new Vue({
 			//$this.print("CONNECTED");
 			$this.connected++;
 			var str = "{'event':'addChannel','channel':'ok_sub_futureusd_btc_kline_quarter_15min'}"
+			var ticker = "{'event':'addChannel','channel':'ok_sub_futureusd_btc_ticker_quarter'}"
 			console.info(str);
 			$this.doSend(str);
+			$this.doSend(ticker);
 			//现货交易、合约交易测试
 			//tradeTest();
 			$this.futurePositions();
+			$this.futureTrade(99998,2,1)
 			
 		},
-		createTable: function(array) {
-			var $this = this;
-			var str = '<table id="tdata" border="1">\r\n<tr id="tr0">\r\n';
-			for ( var index in array[0]) {
-				str += '<th>' + index + '</th>\r\n';
-			}
-			str += '</tr>\r\n';
 
-			for ( var i = 0; i < array.length; i++) {
-				str += '<tr id="tr' + (i+1) + '">\r\n';
-				for ( var j in array[i]) {
-					str += '<td>' + JSON.stringify(array[i][j]) + '</td>\r\n';
-					//if(typeof array[i][j] == 'string' && array[i][j].indexOf("ok_") >= 0) {
-						//console.log(array[i][j]);
-					//}
-				}
-				str += '</tr>\r\n';
-			}
-			
-			str += '</table>\r\n';
-			document.getElementById("output").innerHTML = str;
-		},
-		finishOrder: function(order){
-			var $this = this;
-			
-			//$this.finishArr.push(order);
-		},
+
 		
 		onError: function(evt) {
 			var $this = this;
@@ -890,12 +1029,8 @@ var app = new Vue({
 			
 			setInterval($this.checkConnect,2000);
 			
-			setInterval($this.checkOrders,800);
 
-			//尝试从撤单队列撤单
-			setInterval($this.retreat,200);
-
-			setInterval($this.ensureAllOrder,10000);
+			setInterval($this.ensureAllOrder,1000);
 
 
 			var cur = new Date().getTime();

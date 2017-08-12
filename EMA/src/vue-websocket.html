@@ -531,7 +531,7 @@ var app = new Vue({
 			}else{
 				//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
 				//$this.futureTrade(max, 1, $this.amount-$this.positionD.hold_amount)
-				$this.futureTrade(parseFloat($this.tickerData.buy)+0.55, 1, $this.amount-$this.positionD.hold_amount)
+				$this.futureTrade(parseFloat($this.tickerData.buy)+0.11, 1, $this.amount-$this.positionD.hold_amount)
 			}
 		},
 		openShort: function(){
@@ -541,7 +541,7 @@ var app = new Vue({
 			}else{
 				//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
 				//$this.futureTrade(min, 2, $this.amount)
-				$this.futureTrade(parseFloat($this.tickerData.sell)-0.55, 2, $this.amount-$this.positionK.hold_amount)
+				$this.futureTrade(parseFloat($this.tickerData.sell)-0.11, 2, $this.amount-$this.positionK.hold_amount)
 			}
 		},
 		closeLong: function(){
@@ -552,7 +552,7 @@ var app = new Vue({
 				if($this.positionD.eveningup>0){
 					//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
 					//$this.futureTrade(min, 3, $this.positionD.eveningup);
-					$this.futureTrade(parseFloat($this.tickerData.sell)-0.55, 3, $this.positionD.eveningup)
+					$this.futureTrade(parseFloat($this.tickerData.sell)-0.12, 3, $this.positionD.eveningup)
 				}else{
 					$this.logError("平多过程中，有多仓位，但是无可平仓位", "closeLong()")
 				}
@@ -567,7 +567,7 @@ var app = new Vue({
 
 					//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
 					//$this.futureTrade(max, 4, $this.positionK.eveningup);
-					$this.futureTrade(parseFloat($this.tickerData.buy)+0.55, 4, $this.positionK.eveningup)
+					$this.futureTrade(parseFloat($this.tickerData.buy)+0.12, 4, $this.positionK.eveningup)
 				}else{
 					$this.logError("平空过程中，有空仓位，但是无可平仓位", "closeShort()")
 				}
@@ -579,32 +579,43 @@ var app = new Vue({
 			var obj2 = $this.obj2;*/
 			if(obj1.ema3 < obj1.ema10 && obj2.ema3 > obj2.ema10){
 				//ema3 上穿 ema10
+
 				if((obj2.ema5-obj2.ema10 <= 0.32 && obj2.ema5-obj2.ema10 >=-0.32)||(obj2.ema5-obj2.ema10 > 1.5)||(obj2.ema5-obj2.ema10 < -0.6)){
 					$this.logInfo("开多信号出现","checkStatus()")
+					
 					$this.openLong()
 				}else{
 					$this.logInfo("ema3上穿ema10,但是ema5-ema10="+(obj2.ema5 - obj2.ema10)+"，丢弃","checkStatus()")
+					
 				}
 				if(obj2.ema3 > obj2.ema5){
 					$this.logInfo("平空信号出现","checkStatus()")
+					
 					$this.closeShort()
 				}else{
 					$this.logInfo("ema3上穿ema10，但是ema3还没有击穿ema5，暂不平空","checkStatus()")
+					
 				}
+				$this.logInfo("ema3/5/10:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema10, "checkStatus()");
 			}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 < obj2.ema10){
 				//ema3 下穿 ema10
 				if((obj2.ema5-obj2.ema10 <= 0.32 && obj2.ema5-obj2.ema10 >=-0.32)||(obj2.ema5-obj2.ema10 < -1.5)||(obj2.ema5-obj2.ema10 > 0.6)){
 					$this.logInfo("开空信号出现","checkStatus()")
+					
 					$this.openShort();
 				}else{
 					$this.logInfo("ema3下穿ema10，但是ema5-ema10="+(obj2.ema5 - obj2.ema10)+"，丢弃","checkStatus()")
+					
 				}
 				if(obj2.ema3 < obj2.ema5){
 					$this.logInfo("平多信号出现","checkStatus()")
+					
 					$this.closeLong();
 				}else{
 					$this.logInfo("ema3下穿ema10，但是ema3还没有击穿ema5，暂不平多","checkStatus()")
+					
 				}
+				$this.logInfo("ema3/5/10:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema10, "checkStatus()");
 			}else{
 				if(obj1.ema3 < obj1.ema10 && obj2.ema3 < obj2.ema10){
 					if(obj1.ema3 >= obj1.ema5 && obj2.ema3 < obj2.ema5){
@@ -1057,7 +1068,7 @@ var app = new Vue({
 			setInterval($this.checkConnect,2000);
 			
 
-			setInterval($this.ensureAllOrder,1000);
+			setInterval($this.ensureAllOrder,2000); 
 
 
 			var cur = new Date().getTime();

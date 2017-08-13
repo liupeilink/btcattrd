@@ -531,7 +531,7 @@ var app = new Vue({
 			}else{
 				//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
 				//$this.futureTrade(max, 1, $this.amount-$this.positionD.hold_amount)
-				$this.futureTrade(parseFloat($this.tickerData.buy)+0.11, 1, $this.amount-$this.positionD.hold_amount)
+				$this.futureTrade(parseFloat($this.tickerData.buy)+0.22, 1, $this.amount-$this.positionD.hold_amount)
 			}
 		},
 		openShort: function(){
@@ -541,7 +541,7 @@ var app = new Vue({
 			}else{
 				//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
 				//$this.futureTrade(min, 2, $this.amount)
-				$this.futureTrade(parseFloat($this.tickerData.sell)-0.11, 2, $this.amount-$this.positionK.hold_amount)
+				$this.futureTrade(parseFloat($this.tickerData.sell)-0.22, 2, $this.amount-$this.positionK.hold_amount)
 			}
 		},
 		closeLong: function(){
@@ -552,7 +552,7 @@ var app = new Vue({
 				if($this.positionD.eveningup>0){
 					//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
 					//$this.futureTrade(min, 3, $this.positionD.eveningup);
-					$this.futureTrade(parseFloat($this.tickerData.sell)-0.12, 3, $this.positionD.eveningup)
+					$this.futureTrade(parseFloat($this.tickerData.sell)-0.22, 3, $this.positionD.eveningup)
 				}else{
 					$this.logError("平多过程中，有多仓位，但是无可平仓位", "closeLong()")
 				}
@@ -567,7 +567,7 @@ var app = new Vue({
 
 					//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
 					//$this.futureTrade(max, 4, $this.positionK.eveningup);
-					$this.futureTrade(parseFloat($this.tickerData.buy)+0.12, 4, $this.positionK.eveningup)
+					$this.futureTrade(parseFloat($this.tickerData.buy)+0.22, 4, $this.positionK.eveningup)
 				}else{
 					$this.logError("平空过程中，有空仓位，但是无可平仓位", "closeShort()")
 				}
@@ -580,7 +580,7 @@ var app = new Vue({
 			if(obj1.ema3 < obj1.ema10 && obj2.ema3 > obj2.ema10){
 				//ema3 上穿 ema10
 
-				if((obj2.ema5-obj2.ema10 <= 0.32 && obj2.ema5-obj2.ema10 >=-0.32)||(obj2.ema5-obj2.ema10 > 1.5)||(obj2.ema5-obj2.ema10 < -0.6)){
+				if((obj2.ema5-obj2.ema10 <= 0.36 && obj2.ema5-obj2.ema10 >=-0.36)||(obj2.ema5-obj2.ema10 > 1.5)||(obj2.ema5-obj2.ema10 < -0.6)){
 					$this.logInfo("开多信号出现","checkStatus()")
 					
 					$this.openLong()
@@ -599,7 +599,7 @@ var app = new Vue({
 				$this.logInfo("ema3/5/10:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema10, "checkStatus()");
 			}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 < obj2.ema10){
 				//ema3 下穿 ema10
-				if((obj2.ema5-obj2.ema10 <= 0.32 && obj2.ema5-obj2.ema10 >=-0.32)||(obj2.ema5-obj2.ema10 < -1.5)||(obj2.ema5-obj2.ema10 > 0.6)){
+				if((obj2.ema5-obj2.ema10 <= 0.36 && obj2.ema5-obj2.ema10 >=-0.36)||(obj2.ema5-obj2.ema10 < -1.5)||(obj2.ema5-obj2.ema10 > 0.6)){
 					$this.logInfo("开空信号出现","checkStatus()")
 					
 					$this.openShort();
@@ -660,8 +660,10 @@ var app = new Vue({
 				}
 			}else if(type==1){
 				$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+				$this.logInfo("pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
 			}else if(type==2){
 				$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+				$this.logInfo("pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
 			}else{
 				$this.logError("type="+type,"reMakeOrder()")
 			}
@@ -781,6 +783,9 @@ var app = new Vue({
 							//$this.allOrder.push(order);
 							//$this.proxyingArr.push(order);
 							
+						}else{
+							console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
+							$this.logError("error_code:"+msg.data['error_code'],"ok_futureusd_trade")
 						}
 					}else if(msg['channel']=='ok_futureusd_cancel_order'){
 
@@ -802,6 +807,7 @@ var app = new Vue({
 							$this.logError("撤单失败","ok_futureusd_cancel_order")
 						}
 					}else if(msg['channel']=="ok_sub_futureusd_btc_ticker_quarter"){
+						console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
 						var data = msg['data'];
 						$this.tickerData = data;
 
@@ -930,7 +936,7 @@ var app = new Vue({
 			//tradeTest();
 			$this.futurePositions();
 			$this.futureTrade(99998,2,1)
-			
+
 		},
 
 
@@ -1068,7 +1074,7 @@ var app = new Vue({
 			setInterval($this.checkConnect,2000);
 			
 
-			setInterval($this.ensureAllOrder,2000); 
+			setInterval($this.ensureAllOrder,1000); 
 
 
 			var cur = new Date().getTime();

@@ -163,7 +163,7 @@ var app = new Vue({
 		pingduoRate2:1.0014,
 		deltaLimit:30000,
 		delta:0,
-		amount: 50,
+		amount: 25,
 		changingAmount: 0,
 		leverRate:20,
 
@@ -629,8 +629,10 @@ var app = new Vue({
 				}
 			}else if(type==1){
 				$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+				$this.logInfo("pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
 			}else if(type==2){
 				$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+				$this.logInfo("pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
 			}else{
 				$this.logError("type="+type,"reMakeOrder()")
 			}
@@ -750,6 +752,9 @@ var app = new Vue({
 							//$this.allOrder.push(order);
 							//$this.proxyingArr.push(order);
 							
+						}else{
+							console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
+							$this.logError("error_code:"+msg.data['error_code'],"ok_futureusd_trade")
 						}
 					}else if(msg['channel']=='ok_futureusd_cancel_order'){
 

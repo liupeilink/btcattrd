@@ -632,6 +632,7 @@ var app = new Vue({
 				setTimeout(function(){
 					var need = $this.amount - $this.positionD.hold_amount;
 					if($this.canUseAmount < need){
+						$this.logInfo("可用保证金不足，等待新的available",'reMakeOrder()')
 						var timer = setInterval(function(){
 							if($this.canUseAmount >= need){
 								$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
@@ -653,6 +654,7 @@ var app = new Vue({
 				setTimeout(function(){
 					var need = $this.amount - $this.positionK.hold_amount
 					if($this.canUseAmount < need){
+						$this.logInfo("可用保证金不足，等待新的available",'reMakeOrder()')
 						var timer = setInterval(function(){
 							if($this.canUseAmount >= need){
 								$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
@@ -757,6 +759,7 @@ var app = new Vue({
 							for(var i=0; i<msg['data'].orders.length; i++){
 								var order = msg['data'].orders[i];
 								if(order.price>=99998){
+									$this.futureCancelOrder(order.order_id);
 									continue;
 								}
 								
@@ -879,7 +882,7 @@ var app = new Vue({
 					}else if(msg[i]['channel']=="ok_sub_futureusd_userinfo"){
 						if(msg[i]['data']['symbol']=='btc_usd'){
 							var available = msg[i]['data']['contracts'][0]['available'];
-							$this.canUseAmount = parseInt(avialable*$this.tickerData.last*$this.leverRate/100)
+							$this.canUseAmount = parseInt(available*$this.tickerData.last*$this.leverRate/100)
 						}
 					}
 				}

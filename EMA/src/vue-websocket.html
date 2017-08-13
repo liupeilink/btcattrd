@@ -93,6 +93,7 @@
 var app = new Vue({
 	el:"#app",
 	data: {
+		canUseAmount:'',
 		positionD:{},
 		positionK:{},
 		tickerData:{},
@@ -364,7 +365,7 @@ var app = new Vue({
 		},
 		formatDate: function(date){
 			var d = new Date(date);
-			return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日"+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+			return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()+"-"+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds()+":"+d.getMilliseconds();
 		},
 		start: function(){
 			var $this = this;
@@ -577,15 +578,16 @@ var app = new Vue({
 			var $this = this;
 			/*var obj1 = $this.obj1;
 			var obj2 = $this.obj2;*/
+			var delta = parseFloat( (obj2.ema5-obj2.ema10).toFixed(2) )
 			if(obj1.ema3 < obj1.ema10 && obj2.ema3 > obj2.ema10){
 				//ema3 上穿 ema10
 
-				if((obj2.ema5-obj2.ema10 <= 0.36 && obj2.ema5-obj2.ema10 >=-0.36)||(obj2.ema5-obj2.ema10 > 1.5)||(obj2.ema5-obj2.ema10 < -0.6)){
+				if((delta <= 0.36 && delta >=-0.36)||(delta > 1.5)||(delta < -0.6)){
 					$this.logInfo("开多信号出现","checkStatus()")
 					
 					$this.openLong()
 				}else{
-					$this.logInfo("ema3上穿ema10,但是ema5-ema10="+(obj2.ema5 - obj2.ema10)+"，丢弃","checkStatus()")
+					$this.logInfo("ema3上穿ema10,但是ema5-ema10="+(delta)+"，丢弃","checkStatus()")
 					
 				}
 				if(obj2.ema3 > obj2.ema5){
@@ -599,12 +601,12 @@ var app = new Vue({
 				$this.logInfo("ema3/5/10:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema10, "checkStatus()");
 			}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 < obj2.ema10){
 				//ema3 下穿 ema10
-				if((obj2.ema5-obj2.ema10 <= 0.36 && obj2.ema5-obj2.ema10 >=-0.36)||(obj2.ema5-obj2.ema10 < -1.5)||(obj2.ema5-obj2.ema10 > 0.6)){
+				if((delta <= 0.36 && delta >=-0.36)||(delta < -1.5)||(delta > 0.6)){
 					$this.logInfo("开空信号出现","checkStatus()")
 					
 					$this.openShort();
 				}else{
-					$this.logInfo("ema3下穿ema10，但是ema5-ema10="+(obj2.ema5 - obj2.ema10)+"，丢弃","checkStatus()")
+					$this.logInfo("ema3下穿ema10，但是ema5-ema10="+(delta)+"，丢弃","checkStatus()")
 					
 				}
 				if(obj2.ema3 < obj2.ema5){
@@ -659,11 +661,44 @@ var app = new Vue({
 					$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.hold_amount );
 				}
 			}else if(type==1){
-				$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
-				$this.logInfo("pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
+				setTimeout(function(){
+					var need = $this.amount - $this.positionD.hold_amount;
+					if($this.canUseAmount < need){
+						var timer = setInterval(function(){
+							if($this.canUseAmount >= need){
+								$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+								$this.logInfo("刚发出开多指令，pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
+								clearInterval(timer);
+							}
+						},100)
+					}else{
+
+						$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+						$this.logInfo("刚发出开多指令，pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
+						clearInterval(timer);
+
+					}
+
+				},1000)
+								
 			}else if(type==2){
-				$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
-				$this.logInfo("pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
+				setTimeout(function(){
+					var need = $this.amount - $this.positionK.hold_amount
+					if($this.canUseAmount < need){
+						var timer = setInterval(function(){
+							if($this.canUseAmount >= need){
+								$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+								$this.logInfo("刚发出开空指令，pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
+								clearInterval(timer)
+							}
+						} ,100)
+					}else{
+						$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+						$this.logInfo("刚发出开空指令，pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
+					}
+				} ,1000)
+				
+				
 			}else{
 				$this.logError("type="+type,"reMakeOrder()")
 			}
@@ -688,6 +723,7 @@ var app = new Vue({
 			}
 			$this.logInfo("chase2.id:"+$this.chase2.id, "chaseOrder()")
 			$this.futureCancelOrder(order.order_id);
+			$this.logInfo("已经发出了撤单指令，所撤单的create_date: "+$this.formatDate( new Date(parseInt(order.create_date)).getTime() )+",所撤单的订单类型："+order.type,"chaseOrder()")
 
 		},
 		onMessage: function(e) {
@@ -871,6 +907,11 @@ var app = new Vue({
 						}
 						
 
+					}else if(msg[i]['channel']=="ok_sub_futureusd_userinfo"){
+						if(msg[i]['data']['symbol']=='btc_usd'){
+							var available = msg[i]['data']['contracts'][0]['available'];
+							$this.canUseAmount = parseInt(avialable*$this.tickerData.last*$this.leverRate/100)
+						}
 					}
 				}
 			}
@@ -936,6 +977,7 @@ var app = new Vue({
 			//tradeTest();
 			$this.futurePositions();
 			$this.futureTrade(99998,2,1)
+
 
 		},
 

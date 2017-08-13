@@ -93,6 +93,7 @@
 var app = new Vue({
 	el:"#app",
 	data: {
+		canUseAmount:'',
 		positionD:{},
 		positionK:{},
 		tickerData:{},
@@ -364,7 +365,7 @@ var app = new Vue({
 		},
 		formatDate: function(date){
 			var d = new Date(date);
-			return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日"+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+			return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()+"-"+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds()+":"+d.getMilliseconds();
 		},
 		start: function(){
 			var $this = this;
@@ -628,11 +629,44 @@ var app = new Vue({
 					$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.hold_amount );
 				}
 			}else if(type==1){
-				$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
-				$this.logInfo("pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
+				setTimeout(function(){
+					var need = $this.amount - $this.positionD.hold_amount;
+					if($this.canUseAmount < need){
+						var timer = setInterval(function(){
+							if($this.canUseAmount >= need){
+								$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+								$this.logInfo("刚发出开多指令，pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
+								clearInterval(timer);
+							}
+						},100)
+					}else{
+
+						$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+						$this.logInfo("刚发出开多指令，pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
+						clearInterval(timer);
+
+					}
+
+				},1000)
+								
 			}else if(type==2){
-				$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
-				$this.logInfo("pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
+				setTimeout(function(){
+					var need = $this.amount - $this.positionK.hold_amount
+					if($this.canUseAmount < need){
+						var timer = setInterval(function(){
+							if($this.canUseAmount >= need){
+								$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+								$this.logInfo("刚发出开空指令，pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
+								clearInterval(timer)
+							}
+						} ,100)
+					}else{
+						$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+						$this.logInfo("刚发出开空指令，pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
+					}
+				} ,1000)
+				
+				
 			}else{
 				$this.logError("type="+type,"reMakeOrder()")
 			}
@@ -655,8 +689,9 @@ var app = new Vue({
 				break;
 				default: break;
 			}
-			$this.logInfo("chase2.id:"+$this.chase2.id, "chaseOrder()")
+			
 			$this.futureCancelOrder(order.order_id);
+			$this.logInfo("已经发出了撤单指令，所撤单的create_date: "+$this.formatDate( new Date(parseInt(order.create_date)).getTime() )+",所撤单的订单类型："+order.type,"chaseOrder()")
 
 		},
 		onMessage: function(e) {
@@ -731,6 +766,7 @@ var app = new Vue({
 
 								if(order.status == 0 || order.status == 1){
 									$this.chaseOrder(order);
+									
 								}
 								
 								
@@ -764,7 +800,8 @@ var app = new Vue({
 							for(var i=0; i<$this.chases.length; i++){
 								if($this.chases[i].id == id){
 									$this.reMakeOrder(i+1);
-									$this.logInfo("撤单成功，将要追单，类型为:"+(i+1),"ok_futureusd_cancel_order")
+									//$this.logInfo("撤单成功，将要追单，类型为:"+(i+1),"ok_futureusd_cancel_order")
+									$this.logInfo("撤单成功，已追单，类型为:"+(i+1),"ok_futureusd_cancel_order")
 									break;
 								}
 							}
@@ -839,6 +876,11 @@ var app = new Vue({
 						}
 						
 
+					}else if(msg[i]['channel']=="ok_sub_futureusd_userinfo"){
+						if(msg[i]['data']['symbol']=='btc_usd'){
+							var available = msg[i]['data']['contracts'][0]['available'];
+							$this.canUseAmount = parseInt(avialable*$this.tickerData.last*$this.leverRate/100)
+						}
 					}
 				}
 			}

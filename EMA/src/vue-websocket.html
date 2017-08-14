@@ -581,41 +581,32 @@ var app = new Vue({
 			var delta = parseFloat( (obj2.ema5-obj2.ema10).toFixed(2) )
 			if(obj1.ema3 < obj1.ema10 && obj2.ema3 > obj2.ema10){
 				//ema3 上穿 ema10
-
 				if((delta <= 0.36 && delta >=-0.36)||(delta > 1.5)||(delta < -0.6)){
 					$this.logInfo("开多信号出现","checkStatus()")
-					
 					$this.openLong()
 				}else{
-					$this.logInfo("ema3上穿ema10,但是ema5-ema10="+(delta)+"，丢弃","checkStatus()")
-					
+					$this.logInfo("ema3上穿ema10,但是ema5-ema10="+delta+"，丢弃","checkStatus()")
 				}
 				if(obj2.ema3 > obj2.ema5){
 					$this.logInfo("平空信号出现","checkStatus()")
-					
 					$this.closeShort()
 				}else{
 					$this.logInfo("ema3上穿ema10，但是ema3还没有击穿ema5，暂不平空","checkStatus()")
-					
 				}
 				$this.logInfo("ema3/5/10:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema10, "checkStatus()");
 			}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 < obj2.ema10){
 				//ema3 下穿 ema10
 				if((delta <= 0.36 && delta >=-0.36)||(delta < -1.5)||(delta > 0.6)){
 					$this.logInfo("开空信号出现","checkStatus()")
-					
 					$this.openShort();
 				}else{
-					$this.logInfo("ema3下穿ema10，但是ema5-ema10="+(delta)+"，丢弃","checkStatus()")
-					
+					$this.logInfo("ema3下穿ema10，但是ema5-ema10="+delta+"，丢弃","checkStatus()")
 				}
 				if(obj2.ema3 < obj2.ema5){
 					$this.logInfo("平多信号出现","checkStatus()")
-					
 					$this.closeLong();
 				}else{
 					$this.logInfo("ema3下穿ema10，但是ema3还没有击穿ema5，暂不平多","checkStatus()")
-					
 				}
 				$this.logInfo("ema3/5/10:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema10, "checkStatus()");
 			}else{
@@ -791,6 +782,7 @@ var app = new Vue({
 							for(var i=0; i<msg['data'].orders.length; i++){
 								var order = msg['data'].orders[i];
 								if(order.price>=99998){
+
 									$this.futureCancelOrder(order.order_id);
 									continue;
 								}
@@ -847,7 +839,6 @@ var app = new Vue({
 							$this.logError("撤单失败","ok_futureusd_cancel_order")
 						}
 					}else if(msg['channel']=="ok_sub_futureusd_btc_ticker_quarter"){
-						console.log($this.formatDate(new Date().getTime()) + ": " + e.data)
 						var data = msg['data'];
 						$this.tickerData = data;
 
@@ -904,9 +895,6 @@ var app = new Vue({
 								}
 								
 							}
-
-
-
 
 						}
 						
@@ -982,7 +970,7 @@ var app = new Vue({
 			$this.futurePositions();
 			$this.futureTrade(99998,2,1)
 
-
+			
 		},
 
 
@@ -1120,7 +1108,7 @@ var app = new Vue({
 			setInterval($this.checkConnect,2000);
 			
 
-			setInterval($this.ensureAllOrder,1000); 
+			setInterval($this.ensureAllOrder,1000);
 
 
 			var cur = new Date().getTime();

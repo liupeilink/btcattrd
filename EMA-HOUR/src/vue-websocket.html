@@ -369,7 +369,7 @@ var app = new Vue({
 		},
 		start: function(){
 			var $this = this;
-			$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "e4efd00c-64eb-49db-a010-9897ff89f61f", "");
+			$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "a8322456-3745-4b7d-968b-35224e18afd0", "");
 			$this.startTime = new Date().getTime();
 
 		},
@@ -532,7 +532,7 @@ var app = new Vue({
 			}else{
 				//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
 				//$this.futureTrade(max, 1, $this.amount-$this.positionD.hold_amount)
-				$this.futureTrade(parseFloat($this.tickerData.buy)+0.11, 1, $this.amount-$this.positionD.hold_amount)
+				$this.futureTrade(parseFloat($this.tickerData.buy)+0.22, 1, $this.amount-$this.positionD.hold_amount)
 			}
 		},
 		openShort: function(){
@@ -542,7 +542,7 @@ var app = new Vue({
 			}else{
 				//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
 				//$this.futureTrade(min, 2, $this.amount)
-				$this.futureTrade(parseFloat($this.tickerData.sell)-0.11, 2, $this.amount-$this.positionK.hold_amount)
+				$this.futureTrade(parseFloat($this.tickerData.sell)-0.22, 2, $this.amount-$this.positionK.hold_amount)
 			}
 		},
 		closeLong: function(){
@@ -553,7 +553,7 @@ var app = new Vue({
 				if($this.positionD.eveningup>0){
 					//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
 					//$this.futureTrade(min, 3, $this.positionD.eveningup);
-					$this.futureTrade(parseFloat($this.tickerData.sell)-0.12, 3, $this.positionD.eveningup)
+					$this.futureTrade(parseFloat($this.tickerData.sell)-0.22, 3, $this.positionD.eveningup)
 				}else{
 					$this.logError("平多过程中，有多仓位，但是无可平仓位", "closeLong()")
 				}
@@ -568,7 +568,7 @@ var app = new Vue({
 
 					//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
 					//$this.futureTrade(max, 4, $this.positionK.eveningup);
-					$this.futureTrade(parseFloat($this.tickerData.buy)+0.12, 4, $this.positionK.eveningup)
+					$this.futureTrade(parseFloat($this.tickerData.buy)+0.22, 4, $this.positionK.eveningup)
 				}else{
 					$this.logError("平空过程中，有空仓位，但是无可平仓位", "closeShort()")
 				}
@@ -691,7 +691,7 @@ var app = new Vue({
 				break;
 				default: break;
 			}
-			
+			$this.logInfo("chase2.id:"+$this.chase2.id, "chaseOrder()")
 			$this.futureCancelOrder(order.order_id);
 			$this.logInfo("已经发出了撤单指令，所撤单的create_date: "+$this.formatDate( new Date(parseInt(order.create_date)).getTime() )+",所撤单的订单类型："+order.type,"chaseOrder()")
 
@@ -769,7 +769,6 @@ var app = new Vue({
 
 								if(order.status == 0 || order.status == 1){
 									$this.chaseOrder(order);
-									
 								}
 								
 								
@@ -997,7 +996,7 @@ var app = new Vue({
 			if ((new Date().getTime() - $this.okCoinWebSocket.lastHeartBeat) > $this.okCoinWebSocket.overtime) {
 				console.log("socket 连接断开，正在尝试重新建立连接");
 				//testWebSocket();
-				$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "e4efd00c-64eb-49db-a010-9897ff89f61f", "");
+				$this.okCoinWebSocket.init("wss://real.okex.com:10440/websocket/okexapi", "a8322456-3745-4b7d-968b-35224e18afd0", "");
 
 			}
 		},
@@ -1087,7 +1086,7 @@ var app = new Vue({
 			setInterval($this.checkConnect,2000);
 			
 
-			setInterval($this.ensureAllOrder,2000); 
+			setInterval($this.ensureAllOrder,1000); 
 
 
 			var cur = new Date().getTime();

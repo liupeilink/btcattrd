@@ -339,12 +339,7 @@ var app = new Vue({
 			$this.sendTime = curTime;
 			$this.futureTrade(1000,1,1);
 		},
-		ensureAllOrder: function(){
-			var $this = this;
-			console.log("im checking lost orders...")
 
-			$this.futureOrderInfo(-1);
-		},
 		formatStatus: function(s){
 			var $this = this;
 			switch(s){
@@ -365,7 +360,7 @@ var app = new Vue({
 		},
 		formatDate: function(date){
 			var d = new Date(date);
-			return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()+"-"+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds()+":"+d.getMilliseconds();
+			return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds()+":"+d.getMilliseconds();
 		},
 		start: function(){
 			var $this = this;
@@ -623,73 +618,82 @@ var app = new Vue({
 				}
 
 			}
+			$this.delayCancel(1000);
 		},
 		reMakeOrder: function(type){
 			var $this = this;
 
 			if(type==3){
 				if($this.positionD.hold_amount!=$this.positionD.eveningup){
-					$this.logError("虽然撤平多单成功了，但positionD.hold_amount!=positionD.eveningup，说明新的position还没到，加个定时器","reMakeOrder()")
+					$this.logError("多仓的hold_amount不等于eveningup可平量，讲道理，加个定时器","reMakeOrder()")
 					var timer = setInterval(function(){
 						if($this.positionD.hold_amount==$this.positionD.eveningup){
 							$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 3, $this.positionD.hold_amount );
+							$this.delayCancel(1000);
 							clearInterval(timer);
 						}
 					}, 100);
 				}else{
 					$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 3, $this.positionD.hold_amount );
+					$this.delayCancel(1000);
 				}
 			}else if(type==4){
 				if($this.positionK.hold_amount!=$this.positionK.eveningup){
-					$this.logError("虽然撤平空单成功了，但positionK.hold_amount!=positionK.eveningup，说明新的position还没到，加个定时器","reMakeOrder()")
+					$this.logError("空仓的hold_amount不等于eveningup可平量，讲道理，加个定时器","reMakeOrder()")
 					var timer = setInterval(function(){
 						if($this.positionK.hold_amount==$this.positionK.eveningup){
 							$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.hold_amount );
+							$this.delayCancel(1000);
 							clearInterval(timer);
 						}
 					}, 100);
 				}else{
 					$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.hold_amount );
+					$this.delayCancel(1000);
 				}
 			}else if(type==1){
-				setTimeout(function(){
-					var need = $this.amount - $this.positionD.hold_amount;
-					if($this.canUseAmount < need){
-						$this.logInfo("可用保证金不足，等待新的available",'reMakeOrder()')
-						var timer = setInterval(function(){
-							if($this.canUseAmount >= need){
-								$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
-								$this.logInfo("刚发出开多指令，pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
-								clearInterval(timer);
-							}
-						},100)
-					}else{
 
-						$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
-						$this.logInfo("刚发出开多指令，pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
-						clearInterval(timer);
+				var need = $this.amount - $this.positionD.hold_amount;
+				if($this.canUseAmount < need){
+					$this.logError("开多可用保证金不足，讲道理已经延时1s了还不足，有问题，先不开了",'reMakeOrder()')
+/*					var timer = setInterval(function(){
+						if($this.canUseAmount >= need){
+							$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+							$this.logInfo("刚发出开多指令，pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
+							clearInterval(timer);
+						}
+					},100)*/
+				}else{
 
-					}
+					$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+					$this.delayCancel(1000);
+					$this.logInfo("刚发出开多指令，pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
 
-				},1000)
+
+				}
+				
+
+
 								
 			}else if(type==2){
-				setTimeout(function(){
-					var need = $this.amount - $this.positionK.hold_amount
-					if($this.canUseAmount < need){
-						$this.logInfo("可用保证金不足，等待新的available",'reMakeOrder()')
-						var timer = setInterval(function(){
-							if($this.canUseAmount >= need){
-								$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
-								$this.logInfo("刚发出开空指令，pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
-								clearInterval(timer)
-							}
-						} ,100)
-					}else{
-						$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
-						$this.logInfo("刚发出开空指令，pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
-					}
-				} ,1000)
+
+				var need = $this.amount - $this.positionK.hold_amount
+				if($this.canUseAmount < need){
+					$this.logError("开空可用保证金不足，讲道理已经延时1s了还不足，有问题，先不开了",'reMakeOrder()')
+/*					var timer = setInterval(function(){
+						if($this.canUseAmount >= need){
+							$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+							$this.logInfo("刚发出开空指令，pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
+							clearInterval(timer)
+						}
+					} ,100)*/
+				}else{
+					$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+					$this.delayCancel(1000);
+					$this.logInfo("刚发出开空指令，pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
+				}
+
+
 				
 				
 			}else{
@@ -714,7 +718,7 @@ var app = new Vue({
 				break;
 				default: break;
 			}
-			$this.logInfo("chase2.id:"+$this.chase2.id, "chaseOrder()")
+
 			$this.futureCancelOrder(order.order_id);
 			$this.logInfo("已经发出了撤单指令，所撤单的create_date: "+$this.formatDate( new Date(parseInt(order.create_date)).getTime() )+",所撤单的订单类型："+order.type,"chaseOrder()")
 
@@ -825,9 +829,11 @@ var app = new Vue({
 
 							for(var i=0; i<$this.chases.length; i++){
 								if($this.chases[i].id == id){
-									$this.reMakeOrder(i+1);
-									//$this.logInfo("撤单成功，将要追单，类型为:"+(i+1),"ok_futureusd_cancel_order")
-									$this.logInfo("撤单成功，已追单，类型为:"+(i+1),"ok_futureusd_cancel_order")
+									setTimeout(function(){
+										$this.reMakeOrder(i+1);
+									}, 1000)
+
+									$this.logInfo("撤单成功，1s后追单，类型为:"+(i+1),"ok_futureusd_cancel_order")
 									break;
 								}
 							}
@@ -956,6 +962,12 @@ var app = new Vue({
 			
 			
 		},
+		delayCancel: function(duration){
+			var $this = this;
+			setTimeout(function(){
+				$this.futureOrderInfo(-1);
+			}, duration)
+		}
 		onOpen: function(evt) {
 			var $this = this;
 			//$this.print("CONNECTED");
@@ -968,8 +980,9 @@ var app = new Vue({
 			//现货交易、合约交易测试
 			//tradeTest();
 			$this.futurePositions();
-			$this.futureTrade(99998,2,1)
+			$this.futureTrade(99998,2,1);
 
+			$this.delayCancel(1000);
 			
 		},
 
@@ -1108,7 +1121,6 @@ var app = new Vue({
 			setInterval($this.checkConnect,2000);
 			
 
-			setInterval($this.ensureAllOrder,1000);
 
 
 			var cur = new Date().getTime();

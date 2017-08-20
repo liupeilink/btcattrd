@@ -593,7 +593,13 @@ var app = new Vue({
 
 				$this.logInfo("ema3/5/10:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema10, "checkStatus()");
 			}else{
-				
+				if(obj1.ema3 < obj1.ema10 && obj2.ema3 < obj2.ema10){
+
+					$this.closeLong();
+				}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 > obj2.ema10){
+
+					$this.closeShort();
+				}
 			}
 			$this.delayCancel(1000);
 		},
@@ -761,6 +767,9 @@ var app = new Vue({
 								var order = msg['data'].orders[i];
 								if(order.price>=99998){
 									$this.futureCancelOrder(order.order_id);
+									continue;
+								}
+								if( (order.price%1).toFixed(2)==0.55 ){
 									continue;
 								}
 								
@@ -940,9 +949,9 @@ var app = new Vue({
 		},
 		delayCancel: function(duration){
 			var $this = this;
-			setTimeout(function(){
+			/*setTimeout(function(){
 				$this.futureOrderInfo(-1);
-			}, duration)
+			}, duration)*/
 		},
 		onOpen: function(evt) {
 			var $this = this;
@@ -1029,6 +1038,13 @@ var app = new Vue({
 		futureTrade: function (price,type,amount) {
 			var $this = this;
 			var lv = $this.leverRate;
+			if((price%1).toFixed(2)==0.55){
+				if(type==1||type==4){
+					price = (price + 0.01).toFixed(2);
+				}else{
+					price = (price - 0.01).toFixed(2);
+				}
+			}
 			
 			$this.sendTime = new Date()
 			var okCoinWebSocket = $this.okCoinWebSocket;
@@ -1063,6 +1079,15 @@ var app = new Vue({
 				$this.strError = ls['hourEMAError'];
 			}*/
 
+		},
+		ensure: function(){
+			var $this = this;
+			if($this.cur15minTime != ''){
+				$this.futureOrderInfo(-1);
+			}else{
+				console.log("early")
+			}
+			
 		}
 			
 	
@@ -1095,6 +1120,8 @@ var app = new Vue({
 			};
 			
 			setInterval($this.checkConnect,2000);
+
+			
 			
 
 
@@ -1120,10 +1147,11 @@ var app = new Vue({
 				}
 				
 				
-			},random)
+			},60000)
 		}
 
 		$this.start();
+		setInterval($this.ensure,2000);
 
 		
 				

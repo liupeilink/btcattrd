@@ -58,20 +58,20 @@
 		<div>
 			<p>手动校准ema，不填则使用原来值</p>
 			<div>
-				设置obj2：<input v-model="inpEMA.ema3" type="text" placeholder="ema3"><input v-model="inpEMA.ema5" type="text" placeholder="ema5"><input v-model="inpEMA.ema10" type="text" placeholder="ema10">
+				设置obj2：<input v-model="inpEMA.ema3" type="text" placeholder="ema3"><input v-model="inpEMA.ema5" type="text" placeholder="ema5"><input v-model="inpEMA.ema18" type="text" placeholder="ema18">
 			</div>
 			<button @click="setInpEMA">确认</button>
 		</div>
 
 		<table v-if="objs.length>0">
 			<tr>
-				<th>时间</th><th>ema3</th><th>比较</th><th>ema10</th><th>ema5</th><th>收盘价</th><th>isValid</th>
+				<th>时间</th><th>ema3</th><th>比较</th><th>ema18</th><th>ema5</th><th>收盘价</th><th>isValid</th>
 			</tr>
 			<tr v-for="item in objs">
 				<td>{{ item.formatTime }}</td>
 				<td>{{ item.ema3 }}</td>
-				<td><span v-if="item.ema3<item.ema10">&lt;</span><span v-if="item.ema3>item.ema10">&gt;</span></td>
-				<td>{{ item.ema10 }}</td>
+				<td><span v-if="item.ema3<item.ema18">&lt;</span><span v-if="item.ema3>item.ema18">&gt;</span></td>
+				<td>{{ item.ema18 }}</td>
 				<td>{{ item.ema5 }}</td>
 				<td>{{ item.price }}</td>
 				<td>{{ item.isValid }}</td>
@@ -135,13 +135,13 @@ var app = new Vue({
 		inpEMA:{
 			ema3:'',
 			ema5:'',
-			ema10:''
+			ema18:''
 		},
 		strError:'',
 		strInfo:'',
 		EMA3:'',
 		EMA5:'',
-		EMA10:'',
+		EMA18:'',
 		obj1:{},
 		obj2:{},
 		obj3:{},
@@ -231,12 +231,12 @@ var app = new Vue({
 		direction: function(){
 			var $this = this;
 			var obj2 = $this.obj2;
-			if(obj2.ema3>obj2.ema10){
+			if(obj2.ema3>obj2.ema18){
 				return 'd'
-			}else if(obj2.ema3<obj2.ema10){
+			}else if(obj2.ema3<obj2.ema18){
 				return 'k'
 			}else{
-				$this.logInfo("obj2.ema3==obj2.ema10，不会发生开仓",'direction')
+				$this.logInfo("obj2.ema3==obj2.ema18，不会发生开仓",'direction')
 			}
 		},
 		readableArr: function(){
@@ -313,7 +313,7 @@ var app = new Vue({
 
 				}
 			}
-			window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+			window.localStorage.setItem("EMAFixdata", JSON.stringify($this.objs))
 		},
 		logError: function(str, funcName){
 			var $this = this;
@@ -354,8 +354,8 @@ var app = new Vue({
 			for(var i=0; i<5; i++){
 				startY5 += arr[i][4]*(i+1)/15
 			}
-			for(var i=0; i<10; i++){
-				startY10 += arr[i][4]*(i+1)/55
+			for(var i=0; i<18; i++){
+				startY10 += arr[i][4]*(i+1)/171
 			}
 
 			var objs = [], obj1 = {}, obj2 = {}, obj3 = {};
@@ -402,16 +402,16 @@ var app = new Vue({
 				//console.log("Y5" + "-" + $this.formatDate(parseInt(arr[i][0])) + ': ' + startY5)
 			}
 			for(i=10; i<len; i++){
-				startY10 = (2*arr[i][4]+(10-1)*startY10)/(10+1)
+				startY10 = (2*arr[i][4]+(18-1)*startY10)/(18+1)
 				if(i==len-3){
 					//startY10 = parseFloat(startY10.toFixed(2))
-					obj1.ema10 = startY10
+					obj1.ema18 = startY10
 				}else if(i==len-2){
 					startY10 = parseFloat(startY10.toFixed(2))
-					obj2.ema10 = startY10
+					obj2.ema18 = startY10
 				}else if(i==len-1){
 					startY10 = parseFloat(startY10.toFixed(2))
-					obj3.ema10 = startY10
+					obj3.ema18 = startY10
 				}
 				//console.log("Y10" + "-" + $this.formatDate(parseInt(arr[i][0])) + ': ' + startY10)
 			}
@@ -420,7 +420,7 @@ var app = new Vue({
 			$this.obj3 = obj3;
 
 			//$this.objs = objs;
-			localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+			localStorage.setItem("EMAFixdata", JSON.stringify($this.objs))
 			
 		},
 
@@ -512,15 +512,15 @@ var app = new Vue({
 		},
 		decideYs: function(data){
 			var $this = this;
-			if(window.localStorage.getItem("EMAdata")===null){
+			if(window.localStorage.getItem("EMAFixdata")===null){
 				$this.initEMA(data);
 			}else{
-				var arr = JSON.parse(window.localStorage.getItem("EMAdata"))
-				console.log("EMAdata form localStorage: "+JSON.stringify(arr))
+				var arr = JSON.parse(window.localStorage.getItem("EMAFixdata"))
+				console.log("EMAFixdata form localStorage: "+JSON.stringify(arr))
 				var obj = arr[1]
 				if(obj.timestamp < data[0][0]-900000){
-					window.localStorage.removeItem("EMAdata")
-					$this.logInfo("缓存数据过时，清空ls的EMAdata","decideYs")
+					window.localStorage.removeItem("EMAFixdata")
+					$this.logInfo("缓存数据过时，清空ls的EMAFixdata","decideYs")
 					$this.initEMA(data);
 				}else{
 					$this.alterEMA(data, obj);
@@ -537,16 +537,16 @@ var app = new Vue({
 				}
 			}
 			var len = data.length;
-			var objs = JSON.parse(window.localStorage.getItem("EMAdata"))
+			var objs = JSON.parse(window.localStorage.getItem("EMAFixdata"))
 
-			//一组K线数据最后一个元素正好是obj3,将ls的emadata直接还原即可
+			//一组K线数据最后一个元素正好是obj3,将ls的emaFixdata直接还原即可
 			if(startIndex == data.length-1){
 				$this.obj1 = objs[0];
 				$this.obj2 = objs[1];
 				$this.obj3 = objs[2];
-				console.log("一组K线数据最后一个元素正好是obj3,将ls的emadata直接还原即可")
-				$this.logInfo("一组K线数据最后一个元素正好是obj3,将ls的emadata直接还原即可","alterEMA()")
-				window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+				console.log("一组K线数据最后一个元素正好是obj3,将ls的emaFixdata直接还原即可")
+				$this.logInfo("一组K线数据最后一个元素正好是obj3,将ls的emaFixdata直接还原即可","alterEMA()")
+				window.localStorage.setItem("EMAFixdata", JSON.stringify($this.objs))
 				return;
 			}else if(startIndex == data.length-2){
 				$this.obj1 = objs[1]
@@ -554,7 +554,7 @@ var app = new Vue({
 				$this.obj2.price = data[len-2][4]
 				$this.obj2.ema3 = $this.calema(data[len-2][4], 3, $this.obj1.ema3);
 				$this.obj2.ema5 = $this.calema(data[len-2][4], 5, $this.obj1.ema5);
-				$this.obj2.ema10 = $this.calema(data[len-2][4], 10, $this.obj1.ema10);
+				$this.obj2.ema18 = $this.calema(data[len-2][4], 18, $this.obj1.ema18);
 				$this.obj2.isValid = true;
 				$this.obj2.formatTime = $this.formatDate( parseInt($this.obj2.timestamp) );
 				$this.obj3 = {
@@ -562,8 +562,8 @@ var app = new Vue({
 					price: data[len-1][4],
 					formatTime: $this.formatDate( parseInt(data[len-1][0]) )
 				}
-				window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
-				$this.logInfo("EMAdata落后这组K线1个周期","alterEMA()")
+				window.localStorage.setItem("EMAFixdata", JSON.stringify($this.objs))
+				$this.logInfo("EMAFixdata落后这组K线1个周期","alterEMA()")
 				return;
 
 			}
@@ -572,13 +572,13 @@ var app = new Vue({
 				//(2*data[i][4] + (3-1)*obj.ema3) / (3+1)
 				obj.ema3 = $this.calema(data[i][4], 3, obj.ema3)
 				obj.ema5 = $this.calema(data[i][4], 5, obj.ema5)
-				obj.ema10 = $this.calema(data[i][4], 10, obj.ema10)
+				obj.ema18 = $this.calema(data[i][4], 18, obj.ema18)
 				if(i == data.length-3){
 					$this.obj1.timestamp = data[len-3][0];
 					$this.obj1.price = data[len-3][4];
 					$this.obj1.ema3 = obj.ema3;
 					$this.obj1.ema5 = obj.ema5;
-					$this.obj1.ema10 = obj.ema10;
+					$this.obj1.ema18 = obj.ema18;
 					$this.obj1.isValid = true;
 					$this.obj1.formatTime = $this.formatDate( parseInt(data[i][0]) )
 				}else if(i == data.length-2){
@@ -586,7 +586,7 @@ var app = new Vue({
 					$this.obj2.price = data[len-2][4];
 					$this.obj2.ema3 = obj.ema3;
 					$this.obj2.ema5 = obj.ema5;
-					$this.obj2.ema10 = obj.ema10;
+					$this.obj2.ema18 = obj.ema18;
 					$this.obj2.isValid = true;
 					$this.obj2.formatTime = $this.formatDate( parseInt(data[i][0]) )
 				}else if(i == data.length-1){
@@ -594,15 +594,15 @@ var app = new Vue({
 					$this.obj3.price = data[len-1][4];
 					//$this.obj3.ema3 = obj.ema3;
 					//$this.obj3.ema5 = obj.ema5;
-					//$this.obj3.ema10 = obj.ema10;
+					//$this.obj3.ema18 = obj.ema18;
 					//$this.obj3.isValid = true;
 					$this.obj3.formatTime = $this.formatDate( parseInt(data[i][0]) )
 				}else{
 					continue;
 				}
 			}
-			$this.logInfo("EMAdata落后这组K线1个周期以上","alterEMA()")
-			window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+			$this.logInfo("EMAFixdata落后这组K线1个周期以上","alterEMA()")
+			window.localStorage.setItem("EMAFixdata", JSON.stringify($this.objs))
 
 
 		},
@@ -619,6 +619,7 @@ var app = new Vue({
 				//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
 				//$this.futureTrade(max, 1, $this.amount-$this.positionD.hold_amount)
 				$this.futureTrade(parseFloat($this.tickerData.buy)+0.22, 1, $this.amount-$this.positionD.hold_amount)
+				//$this.futureTrade(parseFloat($this.tickerData.buy)*1.001, 1, $this.amount-$this.positionD.hold_amount)
 			}
 		},
 		openShort: function(){
@@ -629,6 +630,7 @@ var app = new Vue({
 				//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
 				//$this.futureTrade(min, 2, $this.amount)
 				$this.futureTrade(parseFloat($this.tickerData.sell)-0.22, 2, $this.amount-$this.positionK.hold_amount)
+				//$this.futureTrade(parseFloat($this.tickerData.sell)*0.999, 2, $this.amount-$this.positionK.hold_amount)
 			}
 		},
 		closeLong: function(){
@@ -640,6 +642,7 @@ var app = new Vue({
 					//var min = parseFloat( Math.min($this.tickerData.buy, $this.kaipan15min) );
 					//$this.futureTrade(min, 3, $this.positionD.eveningup);
 					$this.futureTrade(parseFloat($this.tickerData.sell)-0.22, 3, $this.positionD.eveningup)
+					//$this.futureTrade(parseFloat($this.tickerData.sell)*0.999, 3, $this.positionD.eveningup)
 				}else{
 					$this.logError("平多过程中，有多仓位，但是无可平仓位", "closeLong()")
 				}
@@ -655,6 +658,7 @@ var app = new Vue({
 					//var max = parseFloat( Math.max($this.tickerData.sell, $this.kaipan15min) );
 					//$this.futureTrade(max, 4, $this.positionK.eveningup);
 					$this.futureTrade(parseFloat($this.tickerData.buy)+0.22, 4, $this.positionK.eveningup)
+					//$this.futureTrade(parseFloat($this.tickerData.buy)*1.001, 4, $this.positionK.eveningup)
 				}else{
 					$this.logError("平空过程中，有空仓位，但是无可平仓位", "closeShort()")
 				}
@@ -664,9 +668,9 @@ var app = new Vue({
 			var $this = this;
 			/*var obj1 = $this.obj1;
 			var obj2 = $this.obj2;*/
-			var delta = parseFloat( (obj2.ema5-obj2.ema10).toFixed(2) )
-			if(obj1.ema3 <= obj1.ema10 && obj2.ema3 > obj2.ema10){
-				//ema3 上穿 ema10
+			var delta = parseFloat( (obj2.ema5-obj2.ema18).toFixed(2) )
+			if(obj1.ema3 <= obj1.ema18 && obj2.ema3 > obj2.ema18){
+				//ema3 上穿 ema18
 				//if((delta <= 0.36 && delta >=-0.36)||(delta > 1.5)||(delta < -0.6)){
 				if((delta <= 1.5 && delta >=-0.6)||(delta > 1.5)||(delta < -0.6)){
 					$this.logInfo("开多平空信号出现","checkStatus()")
@@ -675,18 +679,18 @@ var app = new Vue({
 					$this.cancel45();
 					$this.closeShort()
 				}else{
-					$this.logInfo("ema3上穿ema10,但是ema5-ema10="+delta+"，丢弃","checkStatus()")
+					$this.logInfo("ema3上穿ema18,但是ema5-ema18="+delta+"，丢弃","checkStatus()")
 				}
 				/*if(obj2.ema3 > obj2.ema5){
 					$this.logInfo("平空信号出现","checkStatus()")
 					$this.cancel45();
 					$this.closeShort()
 				}else{
-					$this.logInfo("ema3上穿ema10，但是ema3还没有击穿ema5，暂不平空","checkStatus()")
+					$this.logInfo("ema3上穿ema18，但是ema3还没有击穿ema5，暂不平空","checkStatus()")
 				}*/
-				$this.logInfo("ema3/5/10:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema10, "checkStatus()");
-			}else if(obj1.ema3 >= obj1.ema10 && obj2.ema3 < obj2.ema10){
-				//ema3 下穿 ema10
+				$this.logInfo("ema3/5/18:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema18, "checkStatus()");
+			}else if(obj1.ema3 >= obj1.ema18 && obj2.ema3 < obj2.ema18){
+				//ema3 下穿 ema18
 				//if((delta <= 0.36 && delta >=-0.36)||(delta < -1.5)||(delta > 0.6)){
 				if((delta <= 0.6 && delta >=-1.5)||(delta < -1.5)||(delta > 0.6)){
 					$this.logInfo("开空平多信号出现","checkStatus()")
@@ -694,25 +698,25 @@ var app = new Vue({
 					$this.cancel55();
 					$this.closeLong();
 				}else{
-					$this.logInfo("ema3下穿ema10，但是ema5-ema10="+delta+"，丢弃","checkStatus()")
+					$this.logInfo("ema3下穿ema18，但是ema5-ema18="+delta+"，丢弃","checkStatus()")
 				}
 				/*if(obj2.ema3 < obj2.ema5){
 					$this.logInfo("平多信号出现","checkStatus()")
 					$this.cancel55();
 					$this.closeLong();
 				}else{
-					$this.logInfo("ema3下穿ema10，但是ema3还没有击穿ema5，暂不平多","checkStatus()")
+					$this.logInfo("ema3下穿ema18，但是ema3还没有击穿ema5，暂不平多","checkStatus()")
 				}*/
-				$this.logInfo("ema3/5/10:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema10, "checkStatus()");
+				$this.logInfo("ema3/5/18:"+obj2.ema3+', '+obj2.ema5+', '+obj2.ema18, "checkStatus()");
 			}else{
-				if(obj1.ema3 < obj1.ema10 && obj2.ema3 < obj2.ema10){
+				if(obj1.ema3 < obj1.ema18 && obj2.ema3 < obj2.ema18){
 					if(obj1.ema3 >= obj1.ema5 && obj2.ema3 < obj2.ema5){
 						$this.logInfo("可能是迟到的平多信号，取决于是否持有多仓","checkStatus()")
 						
 					}
 					$this.cancel55();
 					$this.closeLong();
-				}else if(obj1.ema3 > obj1.ema10 && obj2.ema3 > obj2.ema10){
+				}else if(obj1.ema3 > obj1.ema18 && obj2.ema3 > obj2.ema18){
 					if(obj1.ema3 <= obj1.ema5 && obj2.ema3 > obj2.ema5){
 						$this.logInfo("可能是迟到的平空信号，取决于是否持有空仓","checkStatus()")
 						
@@ -737,13 +741,13 @@ var app = new Vue({
 					$this.logError("多仓的hold_amount不等于eveningup可平量，讲道理，加个定时器","reMakeOrder()")
 					var timer = setInterval(function(){
 						if($this.positionD.hold_amount==$this.positionD.eveningup){
-							$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 3, $this.positionD.hold_amount );
+							$this.futureTrade(parseFloat($this.tickerData.sell-5), 3, $this.positionD.hold_amount );
 							$this.delayCancel(1000);
 							clearInterval(timer);
 						}
 					}, 100);
 				}else{
-					$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 3, $this.positionD.hold_amount );
+					$this.futureTrade(parseFloat($this.tickerData.sell-5), 3, $this.positionD.hold_amount );
 					$this.delayCancel(1000);
 				}
 			}else if(type==4){
@@ -751,13 +755,13 @@ var app = new Vue({
 					$this.logError("空仓的hold_amount不等于eveningup可平量，讲道理，加个定时器","reMakeOrder()")
 					var timer = setInterval(function(){
 						if($this.positionK.hold_amount==$this.positionK.eveningup){
-							$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.hold_amount );
+							$this.futureTrade(parseFloat($this.tickerData.buy+5), 4, $this.positionK.hold_amount );
 							$this.delayCancel(1000);
 							clearInterval(timer);
 						}
 					}, 100);
 				}else{
-					$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 4, $this.positionK.hold_amount );
+					$this.futureTrade(parseFloat($this.tickerData.buy+5), 4, $this.positionK.hold_amount );
 					$this.delayCancel(1000);
 				}
 			}else if(type==1){
@@ -774,7 +778,7 @@ var app = new Vue({
 					},100)*/
 				}else{
 
-					$this.futureTrade(parseFloat($this.tickerData.buy+0.05), 1, $this.amount - $this.positionD.hold_amount );
+					$this.futureTrade(parseFloat($this.tickerData.buy+5), 1, $this.amount - $this.positionD.hold_amount );
 					$this.delayCancel(1000);
 					$this.logInfo("刚发出开多指令，pD.hold_amount:"+$this.positionD.hold_amount+",tickerData.buy:"+$this.tickerData.buy,"reMakeOrder()")
 
@@ -797,7 +801,7 @@ var app = new Vue({
 						}
 					} ,100)*/
 				}else{
-					$this.futureTrade(parseFloat($this.tickerData.sell-0.05), 2, $this.amount - $this.positionK.hold_amount);
+					$this.futureTrade(parseFloat($this.tickerData.sell-5), 2, $this.amount - $this.positionK.hold_amount);
 					$this.delayCancel(1000);
 					$this.logInfo("刚发出开空指令，pK.hold_amount:"+$this.positionK.hold_amount+",tickerData.sell:"+$this.tickerData.sell,"reMakeOrder()")
 				}
@@ -836,14 +840,14 @@ var app = new Vue({
 			var $this = this;
 			var obj2 = $this.obj2
 			var obj3 = $this.obj3
-			if(obj2.ema3>obj2.ema10){
-				if(obj3.ema3/obj3.ema10<0.998){
+			if(obj2.ema3>obj2.ema18){
+				if(obj3.ema3/obj3.ema18<0.998){
 					$this.closeLong();
 					$this.logInfo("若有多仓，提前平多，若在开多，停止开多，把它平掉"+obj3.price,"checkInterupt()")
 					$this.interuptD = true;
 				}
-			}else if(obj2.ema3<obj2.ema10){
-				if(obj3.ema3/obj3.ema10>1.002){
+			}else if(obj2.ema3<obj2.ema18){
+				if(obj3.ema3/obj3.ema18>1.002){
 					$this.closeShort();
 					$this.logInfo("若有空仓，提前平空，若在开空，停止开空，把它平掉"+obj3.price,"checkInterupt()")
 					$this.interuptK = true;
@@ -901,13 +905,13 @@ var app = new Vue({
 									formatTime: $this.formatDate( parseInt(data[0]) )
 
 								}
-								window.localStorage.setItem("EMAdata", JSON.stringify($this.objs))
+								window.localStorage.setItem("EMAFixdata", JSON.stringify($this.objs))
 								console.log("set data .............................")
 							}else if($this.obj3.timestamp == data[0]){
 								$this.obj3.price = data[4];
 								$this.obj3.ema3 = $this.calema(data[4], 3, $this.obj2.ema3)
 								$this.obj3.ema5 = $this.calema(data[4], 5, $this.obj2.ema5)
-								$this.obj3.ema10 = $this.calema(data[4], 10, $this.obj2.ema10)
+								$this.obj3.ema18 = $this.calema(data[4], 18, $this.obj2.ema18)
 								/*if($this.interuptD==false && $this.interuptK==false){
 									$this.checkInterupt();
 								}*/
